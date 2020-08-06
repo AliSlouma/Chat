@@ -2,6 +2,7 @@ package com.example.chat;
 
 import androidx.appcompat.app.AppCompatActivity;
 
+import android.content.Intent;
 import android.os.Bundle;
 import android.text.TextUtils;
 import android.view.View;
@@ -36,6 +37,8 @@ public class ProfileActivity extends AppCompatActivity {
             hashMap.put("name" , userName);
             hashMap.put("status" , userStatus);
             root.child("Users").child(firebaseAuth.getCurrentUser().getUid()).setValue(hashMap);
+
+            startActivity(new Intent(this, MainActivity.class));
 
 
         }
