@@ -44,7 +44,9 @@ public class LoginActivity extends AppCompatActivity {
                         public void onComplete(@NonNull Task<AuthResult> task) {
                             if (task.isSuccessful()) {
                                 Toast.makeText(LoginActivity.this, "Success to Login", Toast.LENGTH_SHORT).show();
-                                startActivity(new Intent(getApplicationContext(), ProfileActivity.class));
+                                Intent intent = new Intent(LoginActivity.this , ProfileActivity.class);
+                                intent.setFlags(intent.FLAG_ACTIVITY_NEW_TASK | intent.FLAG_ACTIVITY_CLEAR_TASK);
+                                startActivity(intent);
                             } else {
                                 String errorMessage = task.getException().getMessage().toString();
                                 Toast.makeText(LoginActivity.this, "Error : " + errorMessage, Toast.LENGTH_SHORT).show();
@@ -64,9 +66,8 @@ public class LoginActivity extends AppCompatActivity {
         email = findViewById(R.id.nametext);
         password =findViewById(R.id.editTextTextPassword);
 
-//        if(firebase.getCurrentUser() !=null)
-//            startActivity(new Intent(getApplicationContext(), ProfileActivity.class));
-//
+        if(firebase.getCurrentUser() !=null)
+            startActivity(new Intent(getApplicationContext(), ProfileActivity.class));
 
 
     }

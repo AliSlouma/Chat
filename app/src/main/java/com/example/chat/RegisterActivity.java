@@ -42,7 +42,10 @@ public class RegisterActivity extends AppCompatActivity {
                             if(task.isSuccessful()){
                                 root.child("Users").child(firebaseAuth.getCurrentUser().getUid()).setValue("");
                                 Toast.makeText(RegisterActivity.this, "Success to Register", Toast.LENGTH_SHORT).show();
-                                startActivity(new Intent(getApplicationContext(), ProfileActivity.class));
+
+                                Intent intent = new Intent(RegisterActivity.this , ProfileActivity.class);
+                                intent.setFlags(intent.FLAG_ACTIVITY_NEW_TASK | intent.FLAG_ACTIVITY_CLEAR_TASK);
+                                startActivity(intent);
                             }
                             else{
                                 String errorMessage = task.getException().getMessage().toString();
@@ -66,3 +69,18 @@ public class RegisterActivity extends AppCompatActivity {
 
     }
 }
+/* private FirebaseAuth firebaseAuth;
+    private DatabaseReference root ;
+    private EditText name ;
+    private EditText status ;
+
+    public void done(View view){
+        String userName = name.getText().toString().trim();
+        String userStatus = status.getText().toString().trim();
+
+        if(TextUtils.isEmpty(userName))
+            Toast.makeText(ProfileActivity.this, "Enter Your E-mail", Toast.LENGTH_SHORT).show();
+        else if(TextUtils.isEmpty(userStatus))
+            Toast.makeText(ProfileActivity.this, "Enter Your password", Toast.LENGTH_SHORT).show();
+
+    }*/
