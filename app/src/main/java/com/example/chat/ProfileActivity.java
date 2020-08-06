@@ -46,14 +46,15 @@ public class ProfileActivity extends AppCompatActivity {
                     {
                         Toast.makeText(getApplicationContext(),"Complete",Toast.LENGTH_SHORT).show();
                         startActivity(new Intent(getApplicationContext(), MainActivity.class));
+                        finish();
                     }
                     else{
                         Toast.makeText(getApplicationContext(),"Error" + task.getException().getMessage(),Toast.LENGTH_SHORT).show();                    }
                 }
             });
         }
-
     }
+
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_profile);
@@ -62,7 +63,5 @@ public class ProfileActivity extends AppCompatActivity {
         status = findViewById(R.id.personStatus);
         firebaseAuth = FirebaseAuth.getInstance();
         root = FirebaseDatabase.getInstance().getReference();
-
-
     }
 }

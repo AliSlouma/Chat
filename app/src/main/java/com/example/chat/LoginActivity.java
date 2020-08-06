@@ -55,11 +55,8 @@ public class LoginActivity extends AppCompatActivity {
                                 String errorMessage = task.getException().getMessage().toString();
                                 Toast.makeText(LoginActivity.this, "Error : " + errorMessage, Toast.LENGTH_SHORT).show();
                             }
-
                         }
                     });
-
-
         }
     }
     @Override

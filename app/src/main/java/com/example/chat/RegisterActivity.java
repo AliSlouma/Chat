@@ -38,7 +38,7 @@ public class RegisterActivity extends AppCompatActivity {
                         @Override
                         public void onComplete(@NonNull Task<AuthResult> task) {
                             if(task.isSuccessful()){
-                                root.child("Users").child(firebaseAuth.getCurrentUser().getUid()).setValue("");
+
                                 Toast.makeText(RegisterActivity.this, "Success to Register", Toast.LENGTH_SHORT).show();
 
                                 Intent intent = new Intent(RegisterActivity.this , ProfileActivity.class);
