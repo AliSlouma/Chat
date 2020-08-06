@@ -2,6 +2,7 @@ package com.example.chat;
 
 import androidx.appcompat.app.AppCompatActivity;
 
+import android.content.Intent;
 import android.os.Bundle;
 import android.view.View;
 
@@ -15,6 +16,9 @@ public class MainActivity extends AppCompatActivity {
 
         firebaseAuth.signOut();
 
+        startActivity(new Intent(this, LoginActivity.class));
+        finish();
+
     }
 
     protected void onCreate(Bundle savedInstanceState) {
@@ -22,5 +26,14 @@ public class MainActivity extends AppCompatActivity {
         setContentView(R.layout.activity_main);
 
         firebaseAuth = FirebaseAuth.getInstance();
+
+        sendToSignin();
+    }
+
+    private void sendToSignin() {
+        if (firebaseAuth.getCurrentUser() == null){
+            startActivity(new Intent(this, LoginActivity.class));
+            finish();
+        }
     }
 }

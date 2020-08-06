@@ -1,5 +1,6 @@
 package com.example.chat;
 
+import androidx.annotation.NonNull;
 import androidx.appcompat.app.AppCompatActivity;
 
 import android.content.Intent;
@@ -9,6 +10,8 @@ import android.view.View;
 import android.widget.EditText;
 import android.widget.Toast;
 
+import com.google.android.gms.tasks.OnCompleteListener;
+import com.google.android.gms.tasks.Task;
 import com.google.firebase.auth.FirebaseAuth;
 import com.google.firebase.database.DatabaseReference;
 import com.google.firebase.database.FirebaseDatabase;
@@ -36,11 +39,18 @@ public class ProfileActivity extends AppCompatActivity {
             HashMap<String , String> hashMap = new HashMap<>();
             hashMap.put("name" , userName);
             hashMap.put("status" , userStatus);
-            root.child("Users").child(firebaseAuth.getCurrentUser().getUid()).setValue(hashMap);
-
-            startActivity(new Intent(this, MainActivity.class));
-
-
+            root.child("Users").child(firebaseAuth.getCurrentUser().getUid()).setValue(hashMap).addOnCompleteListener(new OnCompleteListener<Void>() {
+                @Override
+                public void onComplete(@NonNull Task<Void> task) {
+                    if(task.isSuccessful())
+                    {
+                        Toast.makeText(getApplicationContext(),"Complete",Toast.LENGTH_SHORT).show();
+                        startActivity(new Intent(getApplicationContext(), MainActivity.class));
+                    }
+                    else{
+                        Toast.makeText(getApplicationContext(),"Error" + task.getException().getMessage(),Toast.LENGTH_SHORT).show();                    }
+                }
+            });
         }
 
     }

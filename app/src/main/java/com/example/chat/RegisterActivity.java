@@ -3,14 +3,12 @@ package com.example.chat;
 
 import androidx.annotation.NonNull;
 import androidx.appcompat.app.AppCompatActivity;
-
 import android.content.Intent;
 import android.os.Bundle;
 import android.text.TextUtils;
 import android.view.View;
 import android.widget.EditText;
 import android.widget.Toast;
-
 import com.google.android.gms.tasks.OnCompleteListener;
 import com.google.android.gms.tasks.Task;
 import com.google.firebase.auth.AuthResult;
@@ -46,6 +44,7 @@ public class RegisterActivity extends AppCompatActivity {
                                 Intent intent = new Intent(RegisterActivity.this , ProfileActivity.class);
                                 intent.setFlags(intent.FLAG_ACTIVITY_NEW_TASK | intent.FLAG_ACTIVITY_CLEAR_TASK);
                                 startActivity(intent);
+                                finish();
                             }
                             else{
                                 String errorMessage = task.getException().getMessage().toString();
@@ -69,18 +68,3 @@ public class RegisterActivity extends AppCompatActivity {
 
     }
 }
-/* private FirebaseAuth firebaseAuth;
-    private DatabaseReference root ;
-    private EditText name ;
-    private EditText status ;
-
-    public void done(View view){
-        String userName = name.getText().toString().trim();
-        String userStatus = status.getText().toString().trim();
-
-        if(TextUtils.isEmpty(userName))
-            Toast.makeText(ProfileActivity.this, "Enter Your E-mail", Toast.LENGTH_SHORT).show();
-        else if(TextUtils.isEmpty(userStatus))
-            Toast.makeText(ProfileActivity.this, "Enter Your password", Toast.LENGTH_SHORT).show();
-
-    }*/
