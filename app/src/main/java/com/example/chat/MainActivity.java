@@ -1,7 +1,5 @@
 package com.example.chat;
 
-import androidx.annotation.NonNull;
-import androidx.annotation.Nullable;
 import androidx.appcompat.app.AppCompatActivity;
 
 import android.content.Intent;
@@ -10,15 +8,10 @@ import android.view.View;
 
 import com.google.firebase.auth.FirebaseAuth;
 import com.google.firebase.auth.FirebaseUser;
-import com.google.firebase.database.ChildEventListener;
-import com.google.firebase.database.DataSnapshot;
-import com.google.firebase.database.DatabaseError;
 import com.google.firebase.database.DatabaseReference;
 import com.google.firebase.database.FirebaseDatabase;
 
-import java.util.ArrayList;
 import java.util.HashMap;
-import java.util.List;
 import java.util.Map;
 
 public class MainActivity extends AppCompatActivity {
@@ -36,9 +29,20 @@ public class MainActivity extends AppCompatActivity {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
         mFirebaseAuth = FirebaseAuth.getInstance();
+        mFirebaseDatabase = FirebaseDatabase.getInstance();
+        mDatabaseReference = mFirebaseDatabase.getReference();
         sendToSignin();
-       testfriends();
+        //testfriends();
+        // Chats child is for main activity showing the last message and time.
+        // will store objects of ChatInstance class.
+        mDatabaseReference.child("Chats").child(mFirebaseAuth.getCurrentUser().getUid()).setValue("");
+
+        // Messages child of for chat activity showing all the messages.
+        // will store objects of MessageInstance class.
+        mDatabaseReference.child("Messages").child(mFirebaseAuth.getCurrentUser().getUid() + "DiWxZsUAqjMrCRU4QJp8lwLzjXJ2").setValue("");
     }
+
+
 
     private void sendToSignin() {
         if (mFirebaseAuth.getCurrentUser() == null){
@@ -51,14 +55,16 @@ public class MainActivity extends AppCompatActivity {
         FirebaseUser user = mFirebaseAuth.getCurrentUser();
         String id = user.getUid();
         mFirebaseDatabase = FirebaseDatabase.getInstance();
-        mDatabaseReference = mFirebaseDatabase.getReference();
-        Map<String,String> map = new HashMap<>();
-        map.put("ahmed","yes");
-        map.put("khaled","No");
-        map.put("yasser","pending");
+
+        Map<String,Boolean> map = new HashMap<>();
+
+        map.put("ahmed",true);
+        map.put("khaled",false);
+        map.put("yasser",true);
         mDatabaseReference.child("Users").child(id).child("friends");
         mDatabaseReference.child("Users").child(id).child("friends").setValue(map);
-        AddingFriends addingFriends = new AddingFriends();
-        addingFriends.addFriends(id,"your new friend");
+
+        FriendsHandler friendsHandler = new FriendsHandler();
+        friendsHandler.addFriends(id,"your new friend");
     }
 }

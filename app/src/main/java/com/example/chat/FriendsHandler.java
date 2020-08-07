@@ -14,7 +14,7 @@ import java.util.AbstractMap;
 import java.util.HashMap;
 import java.util.Map;
 
-public class AddingFriends {
+public class FriendsHandler {
 
    private static  FirebaseDatabase mFirebaseDatabase;
    private static  DatabaseReference mDatabaseRefrence;
@@ -27,13 +27,13 @@ public class AddingFriends {
             @Override
             public void onDataChange(@NonNull DataSnapshot dataSnapshot) {
                 DataSnapshot friendsShot = dataSnapshot.child("friends");
-               Map<String,String> map = (Map<String, String>) friendsShot.getValue();
-               for(Map.Entry<String,? > entry : map.entrySet()){
+               Map<String,Boolean> map = (Map<String, Boolean>) friendsShot.getValue();
+               for(Map.Entry<String,Boolean > entry : map.entrySet()){
                    if(receiverID.equals(entry.getKey()))
                       return;
                }
 
-                map.put(receiverID,"yes");
+                map.put(receiverID,true);
                 mDatabaseRefrence.child("Users").child(senderID).child("friends").setValue(map);
             }
 

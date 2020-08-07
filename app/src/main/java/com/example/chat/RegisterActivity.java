@@ -38,6 +38,8 @@ public class RegisterActivity extends AppCompatActivity {
                         @Override
                         public void onComplete(@NonNull Task<AuthResult> task) {
                             if(task.isSuccessful()){
+                                root.child("Users").child(firebaseAuth.getCurrentUser().getUid());
+                                root.push().child("Chats").setValue("");
 
                                 Toast.makeText(RegisterActivity.this, "Success to Register", Toast.LENGTH_SHORT).show();
 
@@ -62,9 +64,5 @@ public class RegisterActivity extends AppCompatActivity {
         root = FirebaseDatabase.getInstance().getReference();
         email = findViewById(R.id.email);
         password =findViewById(R.id.password);
-
-
-
-
     }
 }
