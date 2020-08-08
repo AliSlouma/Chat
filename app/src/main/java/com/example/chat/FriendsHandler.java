@@ -47,7 +47,7 @@ public class FriendsHandler {
             public void onCancelled(@NonNull DatabaseError databaseError) {
 
             }
-        });
+       });
     }
 
 }

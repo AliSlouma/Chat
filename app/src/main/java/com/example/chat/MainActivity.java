@@ -1,3 +1,4 @@
+
 package com.example.chat;
 
 import androidx.annotation.NonNull;
@@ -29,7 +30,7 @@ import java.util.Iterator;
 import java.util.Map;
 
 public class MainActivity extends AppCompatActivity {
-
+    public static final String USER_ID = "com.example.chat.user_id";
     FirebaseAuth mFirebaseAuth;
     FirebaseDatabase mFirebaseDatabase;
     DatabaseReference mDatabaseReference;
@@ -45,7 +46,6 @@ public class MainActivity extends AppCompatActivity {
 
         startActivity(new Intent(this, LoginActivity.class));
         finish();
-
     }
 
     @Override
@@ -79,6 +79,7 @@ public class MainActivity extends AppCompatActivity {
         sendToSignin();
         mNameEditText = (EditText)findViewById(R.id.action_add_friend);
         mAddButton = (Button) findViewById(R.id.button_add_friend);
+       // mDatabaseReference.child("Users").child(mFirebaseAuth.getUid()).child("friends").setValue("");
         FriendsHandler friendsHandler = new FriendsHandler(this);
         friendsHandler.addFriendsHandler(mFirebaseAuth.getUid());
         mAddButton.setOnClickListener(new View.OnClickListener() {
@@ -100,7 +101,11 @@ public class MainActivity extends AppCompatActivity {
         listView = findViewById(R.id.chat_list);
         messages = new ArrayList<>();
         arrayAdapterFunc();
+        Intent intent = new Intent(this,UserProfileActivity.class);
+        intent.putExtra(USER_ID,mFirebaseAuth.getUid());
+        startActivity(intent);
     }
+
     private void sendRequest(final String name) {
 
         ValueEventListener valueEventListener = new ValueEventListener() {
