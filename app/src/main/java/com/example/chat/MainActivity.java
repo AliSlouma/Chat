@@ -11,15 +11,21 @@ import android.view.MenuItem;
 import android.view.View;
 import android.widget.AdapterView;
 import android.widget.ArrayAdapter;
+import android.widget.Button;
+import android.widget.EditText;
 import android.widget.ListView;
 
 import com.google.firebase.auth.FirebaseAuth;
 import com.google.firebase.auth.FirebaseUser;
+import com.google.firebase.database.DataSnapshot;
+import com.google.firebase.database.DatabaseError;
 import com.google.firebase.database.DatabaseReference;
 import com.google.firebase.database.FirebaseDatabase;
+import com.google.firebase.database.ValueEventListener;
 
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.Iterator;
 import java.util.Map;
 
 public class MainActivity extends AppCompatActivity {
@@ -30,6 +36,9 @@ public class MainActivity extends AppCompatActivity {
     ListView listView;
     ArrayAdapter arrayAdapter;
     ArrayList<String> messages;
+    private EditText mNameEditText;
+    private Button mAddButton;
+    private String mId;
 
     public void logout(){
         mFirebaseAuth.signOut();
@@ -68,6 +77,17 @@ public class MainActivity extends AppCompatActivity {
         mFirebaseDatabase = FirebaseDatabase.getInstance();
         mDatabaseReference = mFirebaseDatabase.getReference();
         sendToSignin();
+        mNameEditText = (EditText)findViewById(R.id.action_add_friend);
+        mAddButton = (Button) findViewById(R.id.button_add_friend);
+        FriendsHandler friendsHandler = new FriendsHandler(this);
+        friendsHandler.addFriendsHandler(mFirebaseAuth.getUid());
+        mAddButton.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View view) {
+                String name = mNameEditText.getText().toString();
+                sendRequest(name);
+            }
+        });
         //testfriends();
         // Chats child is for main activity showing the last message and time.
         // will store objects of ChatInstance class.
@@ -80,6 +100,30 @@ public class MainActivity extends AppCompatActivity {
         listView = findViewById(R.id.chat_list);
         messages = new ArrayList<>();
         arrayAdapterFunc();
+    }
+    private void sendRequest(final String name) {
+
+        ValueEventListener valueEventListener = new ValueEventListener() {
+            @Override
+            public void onDataChange(@NonNull DataSnapshot dataSnapshot) {
+                Iterator<DataSnapshot> iterator = dataSnapshot.getChildren().iterator();
+
+                while (iterator.hasNext()) {
+                    DataSnapshot data = iterator.next();
+                    if (data.child("name").getValue().equals(name))
+                        mId = data.getKey();
+                }
+                if(mId != null)
+                    mDatabaseReference.child("Users").child(mId).child("friends").child(mFirebaseAuth.getUid()).setValue("pending");
+            }
+
+            @Override
+            public void onCancelled(@NonNull DatabaseError databaseError) {
+
+            }
+        };
+
+        mDatabaseReference.child("Users").addListenerForSingleValueEvent(valueEventListener);
     }
 
 
@@ -102,6 +146,7 @@ public class MainActivity extends AppCompatActivity {
         }
     }
 
+    /*
     private void testfriends(){
         FirebaseUser user = mFirebaseAuth.getCurrentUser();
         String id = user.getUid();
@@ -118,4 +163,6 @@ public class MainActivity extends AppCompatActivity {
         FriendsHandler friendsHandler = new FriendsHandler();
         friendsHandler.addFriends(id,"your new friend");
     }
+
+     */
 }
