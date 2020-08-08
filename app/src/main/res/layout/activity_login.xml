@@ -5,6 +5,7 @@
     android:id="@+id/relative"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
+    android:background="@drawable/back"
     tools:context=".LoginActivity">
 
     <EditText
@@ -36,6 +37,7 @@
         android:layout_width="148dp"
         android:layout_height="49dp"
         android:layout_marginTop="36dp"
+        android:background="#00BCD4"
         android:onClick="signIn"
         android:text="Sign in"
         app:layout_constraintEnd_toEndOf="@+id/editTextTextPassword"
@@ -49,6 +51,7 @@
         android:layout_height="49dp"
         android:layout_marginStart="112dp"
         android:layout_marginTop="12dp"
+        android:background="#00BCD4"
         android:onClick="register"
         android:text="REGISTER"
         app:layout_constraintEnd_toEndOf="@+id/button"
@@ -58,15 +61,15 @@
 
     <TextView
         android:id="@+id/textView"
-        android:layout_width="0dp"
-        android:layout_height="wrap_content"
-        android:layout_marginTop="32dp"
+        android:layout_width="269dp"
+        android:layout_height="62dp"
+        android:layout_marginTop="40dp"
         android:text="ChatApp"
         android:textAlignment="center"
         android:textSize="36sp"
         android:textStyle="bold"
         app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintHorizontal_bias="0.444"
+        app:layout_constraintHorizontal_bias="0.44"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toTopOf="parent" />
 

@@ -29,7 +29,7 @@ public class RegisterActivity extends AppCompatActivity {
         if(TextUtils.isEmpty(userEmail))
             Toast.makeText(RegisterActivity.this, "Enter Your E-mail", Toast.LENGTH_SHORT).show();
         else if(TextUtils.isEmpty(userPassword))
-            Toast.makeText(RegisterActivity.this, "Enter Your password", Toast.LENGTH_SHORT).show();
+            Toast.makeText(RegisterActivity.this, "Enter Your Password", Toast.LENGTH_SHORT).show();
 
 
         else{
