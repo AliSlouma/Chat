@@ -1,5 +1,6 @@
 package com.example.chat;
 
+import android.content.Context;
 import android.content.Intent;
 import android.os.Bundle;
 import android.view.MenuItem;
@@ -10,6 +11,8 @@ import android.widget.ArrayAdapter;
 import android.widget.Button;
 import android.widget.EditText;
 import android.widget.ListView;
+import android.widget.PopupMenu;
+import android.widget.TextView;
 
 import com.google.android.material.floatingactionbutton.FloatingActionButton;
 import com.google.android.material.navigation.NavigationView;
@@ -54,6 +57,8 @@ public class FrontActivity extends AppCompatActivity
     private AdapterView.OnItemClickListener mChatsListner;
     private ArrayAdapter mFriendsAdapter;
     private AdapterView.OnItemClickListener mFriendsListner;
+    private TextView mTextNotificationItemCount;
+    private int mNotificationscount;
     // private AppBarConfiguration mAppBarConfiguration;
 
     @Override
@@ -94,6 +99,7 @@ public class FrontActivity extends AppCompatActivity
                 sendRequest(name);
             }
         });
+
         navigationView.setNavigationItemSelectedListener(this);
         //testfriends();
         // Chats child is for main activity showing the last message and time.
@@ -113,8 +119,30 @@ public class FrontActivity extends AppCompatActivity
     public boolean onCreateOptionsMenu(Menu menu) {
         // Inflate the menu; this adds items to the action bar if it is present.
         getMenuInflater().inflate(R.menu.front, menu);
+        final MenuItem menuItem = menu.findItem(R.id.front_notifications);
+        View actionView = menuItem.getActionView();
+        mTextNotificationItemCount = (TextView) actionView.findViewById(R.id.cart_badge);
+        mNotificationscount = 10;
+        setupBadge();
         return true;
     }
+
+    private void setupBadge() {
+
+        if (mTextNotificationItemCount != null) {
+            if (mNotificationscount == 0) {
+                if (mTextNotificationItemCount.getVisibility() != View.GONE) {
+                    mTextNotificationItemCount.setVisibility(View.GONE);
+                }
+            } else {
+                mTextNotificationItemCount.setText(String.valueOf(Math.min(mNotificationscount, 99)));
+                if (mTextNotificationItemCount.getVisibility() != View.VISIBLE) {
+                    mTextNotificationItemCount.setVisibility(View.VISIBLE);
+                }
+            }
+        }
+    }
+
 
 
 
@@ -183,6 +211,7 @@ public class FrontActivity extends AppCompatActivity
             }
         });
         showChats();
+
     }
     private void sendToSignin() {
         if (mFirebaseAuth.getCurrentUser() == null){
@@ -214,5 +243,11 @@ public class FrontActivity extends AppCompatActivity
 
         listView.setAdapter(mChatsAdapter);
         listView.setOnItemClickListener(mChatsListner);
+        createPopMenu();
+    }
+
+
+    public  void createPopMenu() {
+        //PopupMenu menu = new PopupMenu(this, menuItem);
     }
 }
