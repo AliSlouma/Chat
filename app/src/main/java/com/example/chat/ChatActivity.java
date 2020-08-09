@@ -3,6 +3,7 @@ package com.example.chat;
 import androidx.annotation.NonNull;
 import androidx.appcompat.app.AppCompatActivity;
 
+import android.content.Intent;
 import android.os.Bundle;
 import android.view.View;
 import android.widget.EditText;
@@ -98,10 +99,17 @@ public class ChatActivity extends AppCompatActivity {
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_chat);
+        Intent intent = getIntent();
+        String friendID = intent.getStringExtra("friendID");
 
         firebaseAuth = FirebaseAuth.getInstance();
-        messageKeyRef = FirebaseDatabase.getInstance().getReference().child("Messages").child("eptsajHDYfYj7RvD8vy8OO8k4Ji1DiWxZsUAqjMrCRU4QJp8lwLzjXJ2");
+
+        messageKeyRef = FirebaseDatabase.getInstance().getReference().child("Messages");
+        messageKeyRef.child(friendID + firebaseAuth.getCurrentUser().getUid()).setValue("");
+        messageKeyRef = messageKeyRef.child(friendID + firebaseAuth.getCurrentUser().getUid());
+
         userRef = FirebaseDatabase.getInstance().getReference().child("Users").child(firebaseAuth.getCurrentUser().getUid().toString());
+
         sendMessageEditText = findViewById(R.id.sendMessageEditView);
         displayMessageView = findViewById(R.id.displayMessageView);
         messageInstance = new MessageInstance();
