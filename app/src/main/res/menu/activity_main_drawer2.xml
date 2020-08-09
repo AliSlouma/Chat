@@ -3,12 +3,18 @@
 
     <group android:checkableBehavior="single">
         <item
+            android:id="@+id/nav_profile"
+            android:title="Profile" />
+        <item
             android:id="@+id/nav_chats"
             android:title="Chats" />
         <item
             android:id="@+id/nav_friends"
             android:icon="@drawable/ic_menu_slideshow"
-            android:title="Friends" />
+            android:title="My friends" />
+        <item
+            android:id="@+id/nav_find_friends"
+            android:title="Find friends" />
     </group>
 
     <item android:title="Communicate">

@@ -14,9 +14,9 @@ import android.widget.ArrayAdapter;
 import android.widget.Button;
 import android.widget.EditText;
 import android.widget.ListView;
+import android.widget.TextView;
 
 import com.google.firebase.auth.FirebaseAuth;
-import com.google.firebase.auth.FirebaseUser;
 import com.google.firebase.database.DataSnapshot;
 import com.google.firebase.database.DatabaseError;
 import com.google.firebase.database.DatabaseReference;
@@ -24,9 +24,7 @@ import com.google.firebase.database.FirebaseDatabase;
 import com.google.firebase.database.ValueEventListener;
 
 import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.Iterator;
-import java.util.Map;
 
 public class MainActivity extends AppCompatActivity {
 
@@ -39,6 +37,8 @@ public class MainActivity extends AppCompatActivity {
     private EditText mNameEditText;
     private Button mAddButton;
     private String mId;
+    private int mNotificationscount;
+    private TextView mTextNotificationItemCount;
 
     public void logout(){
         mFirebaseAuth.signOut();
@@ -52,7 +52,31 @@ public class MainActivity extends AppCompatActivity {
     public boolean onCreateOptionsMenu(Menu menu) {
         MenuInflater menuInflater = getMenuInflater();
         menuInflater.inflate(R.menu.main_menu , menu);
+        final MenuItem menuItem = menu.findItem(R.id.front_notifications);
+
+        View actionView = menuItem.getActionView();
+        mTextNotificationItemCount = (TextView) actionView.findViewById(R.id.cart_badge);
+        mNotificationscount = 10;
+        setupBadge();
+
         return super.onCreateOptionsMenu(menu);
+
+
+    }
+    private void setupBadge() {
+
+        if (mTextNotificationItemCount != null) {
+            if (mNotificationscount == 0) {
+                if (mTextNotificationItemCount.getVisibility() != View.GONE) {
+                    mTextNotificationItemCount.setVisibility(View.GONE);
+                }
+            } else {
+                mTextNotificationItemCount.setText(String.valueOf(Math.min(mNotificationscount, 99)));
+                if (mTextNotificationItemCount.getVisibility() != View.VISIBLE) {
+                    mTextNotificationItemCount.setVisibility(View.VISIBLE);
+                }
+            }
+        }
     }
 
     @Override
