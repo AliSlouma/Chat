@@ -18,6 +18,7 @@ import com.google.firebase.database.ValueEventListener;
 
 import java.text.SimpleDateFormat;
 import java.util.Calendar;
+import java.util.HashMap;
 import java.util.Iterator;
 
 public class ChatActivity extends AppCompatActivity {
@@ -34,13 +35,9 @@ public class ChatActivity extends AppCompatActivity {
 
         String key = messageKeyRef.push().getKey();
         messageRef = messageKeyRef.child(key);
+        messageInstance.setMessage(getMessage);
         setMessageInformation();
-        messageRef.child("messageContent").setValue(getMessage);
-        messageRef.child("Time").setValue(messageInstance.getTime());
-        messageRef.child("Date").setValue(messageInstance.getDate());
-        messageRef.child("Sender").setValue(messageInstance.getSender());
-
-
+        messageRef.setValue(messageInstance);
         sendMessageEditText.setText("");
         displayMessageView.setText("");
 
@@ -78,7 +75,7 @@ public class ChatActivity extends AppCompatActivity {
         messageKeyRef.addValueEventListener(new ValueEventListener() {
             @Override
             public void onDataChange(@NonNull DataSnapshot dataSnapshot) {
-              //  displayMessages(dataSnapshot);
+                displayMessages(dataSnapshot);
             }
 
             @Override
@@ -89,10 +86,23 @@ public class ChatActivity extends AppCompatActivity {
     }
 
     private void displayMessages(DataSnapshot dataSnapshot) {
-        Iterator iterator = dataSnapshot.getChildren().iterator();
+        Iterable<DataSnapshot> iterable = dataSnapshot.getChildren();
+        Iterator<DataSnapshot> iterator = iterable.iterator();
+        MessageInstance messageInstance1;
         while (iterator.hasNext()){
-            String message = (String) ((DataSnapshot)iterator.next()).getValue();
-            displayMessageView.append(message+"\n");
+        //    String message = (String) ((DataSnapshot)iterator.next()).getValue();
+
+            HashMap <String ,String> map = (HashMap<String, String>) iterator.next().getValue();
+
+//            DataSnapshot data =  iterator.next();
+//           // messageInstance1 = data.getValue(MessageInstance.class);
+//
+//            String date = (String) data.getValue();
+//            String seder = (String) data.getValue();
+//            String datee = (String) data.getValue();
+            int x = 2;
+            displayMessageView.append(map.get("sender") +"\n" +
+            map.get("message") +"\n" + map.get("time") + "\t" + map.get("date")+ "\n\n");
         }
     }
 
@@ -100,15 +110,15 @@ public class ChatActivity extends AppCompatActivity {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_chat);
         Intent intent = getIntent();
-        String friendID = intent.getStringExtra("friendID");
+        String receiverID = intent.getStringExtra("receiverID");
 
         firebaseAuth = FirebaseAuth.getInstance();
 
-        messageKeyRef = FirebaseDatabase.getInstance().getReference().child("Messages");
-        messageKeyRef.child(friendID + firebaseAuth.getCurrentUser().getUid()).setValue("");
-        messageKeyRef = messageKeyRef.child(friendID + firebaseAuth.getCurrentUser().getUid());
+        compareTheTwoIDS(firebaseAuth.getUid() , receiverID);
 
-        userRef = FirebaseDatabase.getInstance().getReference().child("Users").child(firebaseAuth.getCurrentUser().getUid().toString());
+
+
+        userRef = FirebaseDatabase.getInstance().getReference().child("Users").child(firebaseAuth.getUid());
 
         sendMessageEditText = findViewById(R.id.sendMessageEditView);
         displayMessageView = findViewById(R.id.displayMessageView);
@@ -116,5 +126,13 @@ public class ChatActivity extends AppCompatActivity {
 
 
 
+    }
+
+    private void compareTheTwoIDS(String uid, String receiverID) {
+        if(uid.compareTo(receiverID) >=0){
+            messageKeyRef = FirebaseDatabase.getInstance().getReference().child("messagesContent").child(uid+receiverID);
+        }else
+            messageKeyRef = FirebaseDatabase.getInstance().getReference().child("messagesContent").child(receiverID+uid).push();
+       // messageKeyRef.push().setValue("");
     }
 }

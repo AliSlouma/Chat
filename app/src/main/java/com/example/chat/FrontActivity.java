@@ -28,9 +28,6 @@ import androidx.appcompat.app.AppCompatActivity;
 import androidx.appcompat.widget.Toolbar;
 
 import java.util.ArrayList;
-import java.util.Collection;
-import java.util.Collections;
-import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
@@ -44,7 +41,7 @@ public class FrontActivity extends AppCompatActivity
     DatabaseReference mDatabaseReference;
     ListView listView;
     ArrayAdapter arrayAdapter;
-    ArrayList<String> messages;
+    ArrayList<String> mChats;
     private EditText mNameEditText;
     private Button mAddButton;
     private String mId;
@@ -96,8 +93,9 @@ public class FrontActivity extends AppCompatActivity
         .setValue("");
         mDatabaseReference.child("friends").child(mFirebaseAuth.getUid()).child(mFirebaseAuth.getUid())
                 .setValue("");
-        messages = new ArrayList<>();
-        arrayAdapterFunc();
+
+
+
         root = mDatabaseReference.child("Users");
         root.child(mFirebaseAuth.getUid()).addListenerForSingleValueEvent(new ValueEventListener() {
             @Override
@@ -111,6 +109,9 @@ public class FrontActivity extends AppCompatActivity
             }
         });
 
+        mChats = new ArrayList<>();
+        setChatAdapter();
+        arrayAdapterFunc();
     }
 
     @Override
@@ -142,19 +143,39 @@ public class FrontActivity extends AppCompatActivity
     }
 
 
+    private void setChatAdapter() {
+        mDatabaseReference.child("friends").child(mFirebaseAuth.getUid()).addValueEventListener(new ValueEventListener() {
+            @Override
+            public void onDataChange(@NonNull DataSnapshot dataSnapshot) {
+                if(dataSnapshot.exists()){
+                    Iterator iterator = dataSnapshot.getChildren().iterator();
+                    while (iterator.hasNext()){
+                        String friend = (String) ((DataSnapshot)(iterator.next())).getKey();
+                        mChats.add(friend);
+                    }
+                }
+            }
 
+            @Override
+            public void onCancelled(@NonNull DatabaseError databaseError) {
+
+            }
+        });
+    }
 
 
 
 
     private void arrayAdapterFunc() {
-        messages.add("Test Chat");
-        mChatsAdapter = new ArrayAdapter<>(getApplicationContext(),android.R.layout.simple_list_item_1 , messages);
+        //mChats.add("Test Chat");
+        mChatsAdapter = new ArrayAdapter<>(getApplicationContext(),android.R.layout.simple_list_item_1 , mChats);
        //listView.setAdapter(arrayAdapter);
         mChatsListner = new AdapterView.OnItemClickListener() {
             @Override
             public void onItemClick(AdapterView<?> adapterView, View view, int postion, long id) {
                 Intent intent = new Intent(getApplicationContext() , ChatActivity.class);
+                String receiverID = (String) adapterView.getItemAtPosition(postion);
+                intent.putExtra("receiverID",receiverID);
                 startActivity(intent);
             }
         };
