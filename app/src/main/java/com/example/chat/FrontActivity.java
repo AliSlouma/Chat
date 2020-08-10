@@ -1,6 +1,5 @@
 package com.example.chat;
 
-import android.content.Context;
 import android.content.Intent;
 import android.os.Bundle;
 import android.view.MenuItem;
@@ -11,12 +10,9 @@ import android.widget.ArrayAdapter;
 import android.widget.Button;
 import android.widget.EditText;
 import android.widget.ListView;
-import android.widget.PopupMenu;
 import android.widget.TextView;
 
-import com.google.android.material.floatingactionbutton.FloatingActionButton;
 import com.google.android.material.navigation.NavigationView;
-import com.google.android.material.snackbar.Snackbar;
 import com.google.firebase.auth.FirebaseAuth;
 import com.google.firebase.database.DataSnapshot;
 import com.google.firebase.database.DatabaseError;
@@ -27,15 +23,14 @@ import com.google.firebase.database.ValueEventListener;
 import androidx.annotation.NonNull;
 import androidx.appcompat.app.ActionBarDrawerToggle;
 import androidx.core.view.GravityCompat;
-import androidx.navigation.NavController;
-import androidx.navigation.Navigation;
-import androidx.navigation.ui.AppBarConfiguration;
-import androidx.navigation.ui.NavigationUI;
 import androidx.drawerlayout.widget.DrawerLayout;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.appcompat.widget.Toolbar;
 
 import java.util.ArrayList;
+import java.util.Collection;
+import java.util.Collections;
+import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
@@ -59,6 +54,17 @@ public class FrontActivity extends AppCompatActivity
     private AdapterView.OnItemClickListener mFriendsListner;
     private TextView mTextNotificationItemCount;
     private int mNotificationscount;
+    private ArrayAdapter mProfilesAdapet;
+    private Map<String,UserInstance> mUsers;
+    private AdapterView.OnItemClickListener mProfilesListener;
+    private DatabaseReference root;
+    public static UserInstance mMyUSer;
+    private List<UserInstance> mFriends;
+    private List<UserInstance> mRequest;
+    private ArrayAdapter mRequestAdapter;
+    private AdapterView.OnItemClickListener mRequestsListener;
+    private ArrayAdapter mProfilesAdapter;
+    private List<UserInstance> mProfiles;
     // private AppBarConfiguration mAppBarConfiguration;
 
     @Override
@@ -67,14 +73,6 @@ public class FrontActivity extends AppCompatActivity
         setContentView(R.layout.activity_front);
         Toolbar toolbar = findViewById(R.id.toolbar);
         setSupportActionBar(toolbar);
-        FloatingActionButton fab = findViewById(R.id.fab);
-        fab.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View view) {
-                Snackbar.make(view, "Replace with your own action", Snackbar.LENGTH_LONG)
-                        .setAction("Action", null).show();
-            }
-        });
         DrawerLayout drawer = findViewById(R.id.drawer_layout);
         NavigationView navigationView = findViewById(R.id.nav_view);
 
@@ -82,37 +80,37 @@ public class FrontActivity extends AppCompatActivity
                 this, drawer, toolbar, R.string.navigation_drawer_open, R.string.navigation_drawer_close);
         drawer.setDrawerListener(toggle);
         toggle.syncState();
+        navigationView.setNavigationItemSelectedListener(this);
 
         mFirebaseAuth = FirebaseAuth.getInstance();
         mFirebaseDatabase = FirebaseDatabase.getInstance();
         mDatabaseReference = mFirebaseDatabase.getReference();
+        listView = findViewById(R.id.chat_list);
+
         sendToSignin();
-        mNameEditText = (EditText)findViewById(R.id.action_add_friend);
-        mAddButton = (Button) findViewById(R.id.button_add_friend);
-        // mDatabaseReference.child("Users").child(mFirebaseAuth.getUid()).child("friends").setValue("");
-        FriendsHandler friendsHandler = new FriendsHandler(this);
-        friendsHandler.addFriendsHandler(mFirebaseAuth.getUid());
-        mAddButton.setOnClickListener(new View.OnClickListener() {
+
+        //mDatabaseReference.child("Users").child(mFirebaseAuth.getUid()).child("friends").setValue("");
+       // FriendsHandler friendsHandler = new FriendsHandler(this);
+       // friendsHandler.addFriendsHandler(mFirebaseAuth.getUid());
+        mDatabaseReference.child("FriendRequests").child(mFirebaseAuth.getUid()).child(mFirebaseAuth.getUid())
+        .setValue("");
+        mDatabaseReference.child("friends").child(mFirebaseAuth.getUid()).child(mFirebaseAuth.getUid())
+                .setValue("");
+        messages = new ArrayList<>();
+        arrayAdapterFunc();
+        root = mDatabaseReference.child("Users");
+        root.child(mFirebaseAuth.getUid()).addListenerForSingleValueEvent(new ValueEventListener() {
             @Override
-            public void onClick(View view) {
-                String name = mNameEditText.getText().toString();
-                sendRequest(name);
+            public void onDataChange(@NonNull DataSnapshot dataSnapshot) {
+                mMyUSer = dataSnapshot.getValue(UserInstance.class);
+            }
+
+            @Override
+            public void onCancelled(@NonNull DatabaseError databaseError) {
+
             }
         });
 
-        navigationView.setNavigationItemSelectedListener(this);
-        //testfriends();
-        // Chats child is for main activity showing the last message and time.
-        // will store objects of ChatInstance class.
-        mDatabaseReference.child("Chats").child(mFirebaseAuth.getCurrentUser().getUid()).setValue("");
-
-        // Messages child of for chat activity showing all the messages.
-        // will store objects of MessageInstance class.
-        mDatabaseReference.child("Messages").child(mFirebaseAuth.getCurrentUser().getUid() + "DiWxZsUAqjMrCRU4QJp8lwLzjXJ2").setValue("");
-
-        listView = findViewById(R.id.chat_list);
-        messages = new ArrayList<>();
-        arrayAdapterFunc();
     }
 
     @Override
@@ -147,35 +145,10 @@ public class FrontActivity extends AppCompatActivity
 
 
 
-    private void sendRequest(final String name) {
-
-        ValueEventListener valueEventListener = new ValueEventListener() {
-            @Override
-            public void onDataChange(@NonNull DataSnapshot dataSnapshot) {
-                Iterator<DataSnapshot> iterator = dataSnapshot.getChildren().iterator();
-
-                while (iterator.hasNext()) {
-                    DataSnapshot data = iterator.next();
-                    if (data.child("name").getValue().equals(name))
-                        mId = data.getKey();
-                }
-                if(mId != null)
-                    mDatabaseReference.child("Users").child(mId).child("friends").child(mFirebaseAuth.getUid()).setValue("pending");
-            }
-
-            @Override
-            public void onCancelled(@NonNull DatabaseError databaseError) {
-
-            }
-        };
-
-        mDatabaseReference.child("Users").addListenerForSingleValueEvent(valueEventListener);
-    }
 
 
     private void arrayAdapterFunc() {
         messages.add("Test Chat");
-
         mChatsAdapter = new ArrayAdapter<>(getApplicationContext(),android.R.layout.simple_list_item_1 , messages);
        //listView.setAdapter(arrayAdapter);
         mChatsListner = new AdapterView.OnItemClickListener() {
@@ -185,24 +158,97 @@ public class FrontActivity extends AppCompatActivity
                 startActivity(intent);
             }
         };
-        mDatabaseReference.child("Users").child(mFirebaseAuth.getUid()).child("friends").addListenerForSingleValueEvent(new ValueEventListener() {
+        showChats();
+        initializeFriendsAdapter();
+    //    initializeProfileAdapter();
+        initializeRequestsAdapter();
+    }
+
+
+    private void sendToSignin() {
+        if (mFirebaseAuth.getCurrentUser() == null){
+            startActivity(new Intent(this, LoginActivity.class));
+            finish();
+        }
+    }
+    private void initializeFriendsAdapter(){
+
+        mFriends = new ArrayList<>();
+        mFriendsAdapter = new ArrayAdapter<>(getApplicationContext(),android.R.layout.simple_list_item_1 , mFriends);
+        mFriendsListner = new AdapterView.OnItemClickListener() {
+            @Override
+            public void onItemClick(AdapterView<?> adapterView, View view, int postion, long id) {
+                Intent intent = new Intent(getApplicationContext() , UserProfileActivity.class);
+                intent.putExtra(USER_ID, mFriends.get(postion).getUId());
+                startActivity(intent);
+            }
+        };
+        mDatabaseReference.child("friends").child(mFirebaseAuth.getUid()).addValueEventListener(new ValueEventListener() {
             @Override
             public void onDataChange(@NonNull DataSnapshot dataSnapshot) {
-                final List<String> friends = new ArrayList<>();
-                Map<String,String> map = (Map<String, String>) dataSnapshot.getValue();
-                for(Map.Entry<String,String> entry : map.entrySet()){
-                    if(entry.getValue().equals("yes"))
-                            friends.add(entry.getKey());
+
+                Iterable<DataSnapshot> iterable = dataSnapshot.getChildren();
+                Iterator<DataSnapshot> iterator = iterable.iterator();
+                while (iterator.hasNext()){
+                    DataSnapshot data = iterator.next();
+                    String id = data.getKey();
+                    root.child(id).addListenerForSingleValueEvent(new ValueEventListener() {
+                        @Override
+                        public void onDataChange(@NonNull DataSnapshot dataSnapshot) {
+                            mFriends.add(dataSnapshot.getValue(UserInstance.class));
+                        }
+
+                        @Override
+                        public void onCancelled(@NonNull DatabaseError databaseError) {
+
+                        }
+                    });
                 }
-                mFriendsAdapter = new ArrayAdapter<>(getApplicationContext(),android.R.layout.simple_list_item_1 , friends);
-                mFriendsListner = new AdapterView.OnItemClickListener() {
-                    @Override
-                    public void onItemClick(AdapterView<?> adapterView, View view, int postion, long id) {
-                        Intent intent = new Intent(getApplicationContext() , UserProfileActivity.class);
-                        intent.putExtra(USER_ID,friends.get(postion));
-                        startActivity(intent);
-                    }
-                };
+                mFriendsAdapter.notifyDataSetChanged();
+            }
+
+
+            @Override
+            public void onCancelled(@NonNull DatabaseError databaseError) {
+
+            }
+        });
+
+
+    }
+
+    private void initializeRequestsAdapter(){
+
+        mRequest = new ArrayList<>();
+        mRequestAdapter = new ArrayAdapter<>(getApplicationContext(),android.R.layout.simple_list_item_1 , mRequest);
+        mRequestsListener = new AdapterView.OnItemClickListener() {
+            @Override
+            public void onItemClick(AdapterView<?> adapterView, View view, int postion, long id) {
+                Intent intent = new Intent(getApplicationContext() , UserProfileActivity.class);
+                intent.putExtra(USER_ID, mFriends.get(postion).getUId());
+                startActivity(intent);
+            }
+        };
+
+        mDatabaseReference.child("FriendRequests").child(mFirebaseAuth.getUid()).addValueEventListener(new ValueEventListener() {
+            @Override
+            public void onDataChange(@NonNull DataSnapshot dataSnapshot) {
+                Iterable<DataSnapshot> iterable = dataSnapshot.getChildren();
+                Iterator<DataSnapshot> iterator = iterable.iterator();
+                while (iterator.hasNext()){
+                    DataSnapshot data = iterator.next();
+                    String id = data.getKey();
+                    root.child(id).addListenerForSingleValueEvent(new ValueEventListener() {
+                        @Override
+                        public void onDataChange(@NonNull DataSnapshot dataSnapshot) {
+                            mRequest.add(dataSnapshot.getValue(UserInstance.class));
+                        }
+                        @Override
+                        public void onCancelled(@NonNull DatabaseError databaseError) {
+
+                        }
+                    });
+                }
             }
 
             @Override
@@ -210,15 +256,43 @@ public class FrontActivity extends AppCompatActivity
 
             }
         });
-        showChats();
+    }
+/*
+    private void initializeProfileAdapter(){
+        mUsers = new HashMap<>();
+        mProfiles = new ArrayList<>();
+        mProfilesAdapter = new ArrayAdapter(this,android.R.layout.simple_list_item_1, mProfiles);
+        mProfilesListener = new AdapterView.OnItemClickListener() {
+            @Override
+            public void onItemClick(AdapterView<?> adapterView, View view, int i, long l) {
+                Intent intent = new Intent(getApplicationContext() , UserProfileActivity.class);
+                intent.putExtra(USER_ID,mProfiles.get(i).getUId());
+                startActivity(intent);
+            }
+        };
+
+        mDatabaseReference.child("Users").addValueEventListener(new ValueEventListener() {
+            @Override
+            public void onDataChange(@NonNull DataSnapshot dataSnapshot) {
+                Iterable<DataSnapshot> iterable = dataSnapshot.getChildren();
+                Iterator<DataSnapshot> iterator = iterable.iterator();
+                while (iterator.hasNext()) {
+                   DataSnapshot dataSnapshotforItem = iterator.next();
+                  //  UserInstance userInstance = dataSnapshot.getValue();
+                   // mProfiles.add(userInstance);
+                }
+            }
+
+            @Override
+            public void onCancelled(@NonNull DatabaseError databaseError) {
+
+            }
+        });
+
 
     }
-    private void sendToSignin() {
-        if (mFirebaseAuth.getCurrentUser() == null){
-            startActivity(new Intent(this, LoginActivity.class));
-            finish();
-        }
-    }
+
+ */
 
     @Override
     public boolean onNavigationItemSelected(@NonNull MenuItem item) {
@@ -227,7 +301,11 @@ public class FrontActivity extends AppCompatActivity
             showChats();
         }else if(id == R.id.nav_friends){
             showFriends();
-        }
+        }else if(id == R.id.nav_profiles){
+        showProfiles();
+    }else if(id == R.id.nav_requests){
+        showRequests();
+    }
         DrawerLayout drawer = (DrawerLayout) findViewById(R.id.drawer_layout);
         drawer.closeDrawer(GravityCompat.START);
        // item.setChecked(true);
@@ -243,11 +321,21 @@ public class FrontActivity extends AppCompatActivity
 
         listView.setAdapter(mChatsAdapter);
         listView.setOnItemClickListener(mChatsListner);
-        createPopMenu();
+
+    }
+    private void showRequests() {
+
+        listView.setAdapter(mRequestAdapter);
+        listView.setOnItemClickListener(mRequestsListener);
+
+    }
+    private void showProfiles() {
+        listView.setAdapter(mProfilesAdapter);
+        listView.setOnItemClickListener(mProfilesListener);
     }
 
 
-    public  void createPopMenu() {
-        //PopupMenu menu = new PopupMenu(this, menuItem);
-    }
+
+
+
 }

@@ -13,8 +13,7 @@ import com.google.firebase.database.DatabaseReference;
 import com.google.firebase.database.FirebaseDatabase;
 import com.google.firebase.database.ValueEventListener;
 
-import java.util.AbstractMap;
-import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 
 public class FriendsHandler {
@@ -32,15 +31,11 @@ public class FriendsHandler {
     }
 
     public void addFriendsHandler(String senderID){
-        mDatabaseRefrence.child("Users").child(senderID).child("friends").addValueEventListener(new ValueEventListener() {
+        mDatabaseRefrence.child("FriendRequests").child(senderID).addValueEventListener(new ValueEventListener() {
             @Override
             public void onDataChange(@NonNull DataSnapshot dataSnapshot) {
-               Map<String,String> map = (Map<String, String>) dataSnapshot.getValue();
+                List<UserInstance> requests = (List<UserInstance>) dataSnapshot.getValue();
 
-               for(Map.Entry<String,String > entry : map.entrySet()) {
-                   if ("pending".equals(entry.getValue()))
-                       Toast.makeText(mContext, entry.getKey() + "send you a friend request", Toast.LENGTH_SHORT).show();
-               }
             }
 
             @Override

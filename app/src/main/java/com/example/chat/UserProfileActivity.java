@@ -8,6 +8,7 @@ import android.os.Bundle;
 import android.util.Log;
 import android.view.Menu;
 import android.view.MenuInflater;
+import android.view.MenuItem;
 import android.widget.ImageView;
 import android.widget.TextView;
 import android.widget.Toolbar;
@@ -19,6 +20,10 @@ import com.google.firebase.database.DatabaseReference;
 import com.google.firebase.database.FirebaseDatabase;
 import com.google.firebase.database.ValueEventListener;
 
+import java.util.Iterator;
+
+import static com.example.chat.FirebaseUtil.*;
+
 public class UserProfileActivity extends AppCompatActivity {
 
     private String mUserID;
@@ -26,6 +31,7 @@ public class UserProfileActivity extends AppCompatActivity {
     private TextView mNameEditText;
     private TextView mStatusEditText;
     private ImageView mPhotoImageView;
+    private String mId;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -40,7 +46,7 @@ public class UserProfileActivity extends AppCompatActivity {
 
     private void displayStateValue() {
         Intent intent = getIntent();
-        mUserID = intent.getStringExtra(MainActivity.USER_ID);
+        mUserID = intent.getStringExtra(FrontActivity.USER_ID);
     }
 
 
@@ -61,9 +67,8 @@ public class UserProfileActivity extends AppCompatActivity {
             }
         };
 
-        FirebaseUtil.sDatabaseReference.child("Users").child(mUserID).addListenerForSingleValueEvent(valueEventListener);
+        sDatabaseReference.child("Users").child(mUserID).addListenerForSingleValueEvent(valueEventListener);
     }
-
 
     @Override
     public boolean onCreateOptionsMenu(Menu menu) {
@@ -71,4 +76,41 @@ public class UserProfileActivity extends AppCompatActivity {
         menuInflater.inflate(R.menu.profile_menu , menu);
         return super.onCreateOptionsMenu(menu);
     }
+
+    @Override
+    public boolean onOptionsItemSelected(@NonNull MenuItem item) {
+        int id = item.getItemId();
+
+        if(id == R.id.action_add_friend){
+            sDatabaseReference.child("FriendRequests").child(mUserID).push().setValue(FrontActivity.mMyUSer);
+        }
+        return true;
+    }
+/*
+    private void sendRequest(final String name) {
+
+        ValueEventListener valueEventListener = new ValueEventListener() {
+            @Override
+            public void onDataChange(@NonNull DataSnapshot dataSnapshot) {
+                Iterator<DataSnapshot> iterator = dataSnapshot.getChildren().iterator();
+
+                while (iterator.hasNext()) {
+                    DataSnapshot data = iterator.next();
+                    if (data.child("name").getValue().equals(name))
+                        mId = data.getKey();
+                }
+                if(mId != null)
+                    sDatabaseReference.child("Users").child("friends").child(mId).child(sFirebaseAuth.getUid()).setValue("pending");
+            }
+
+            @Override
+            public void onCancelled(@NonNull DatabaseError databaseError) {
+
+            }
+        };
+
+        mDatabaseReference.child("Users").addListenerForSingleValueEvent(valueEventListener);
+    }
+
+    */
 }
