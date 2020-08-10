@@ -36,16 +36,16 @@ public class ProfileActivity extends AppCompatActivity {
             Toast.makeText(ProfileActivity.this, "Enter Your password", Toast.LENGTH_SHORT).show();
 
         else{
-            HashMap<String , String> hashMap = new HashMap<>();
-            hashMap.put("name" , userName);
-            hashMap.put("status" , userStatus);
-            root.child("Users").child(firebaseAuth.getCurrentUser().getUid()).setValue(hashMap).addOnCompleteListener(new OnCompleteListener<Void>() {
+
+            UserInstance userInstance = new UserInstance(firebaseAuth.getUid(),"",name.getText().toString(),status.getText().toString());
+
+            root.child("Users").child(firebaseAuth.getCurrentUser().getUid()).setValue(userInstance).addOnCompleteListener(new OnCompleteListener<Void>() {
                 @Override
                 public void onComplete(@NonNull Task<Void> task) {
                     if(task.isSuccessful())
                     {
                         Toast.makeText(getApplicationContext(),"Complete",Toast.LENGTH_SHORT).show();
-                        startActivity(new Intent(getApplicationContext(), MainActivity.class));
+                        startActivity(new Intent(getApplicationContext(), FrontActivity.class));
                         finish();
                     }
                     else{

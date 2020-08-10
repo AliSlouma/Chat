@@ -78,7 +78,7 @@ public class LoginActivity extends AppCompatActivity {
             public void onDataChange(@NonNull DataSnapshot dataSnapshot){
                 if (dataSnapshot.child("name").exists()) {
                     Toast.makeText(getApplicationContext(),"Welcome back ", Toast.LENGTH_SHORT).show();
-                    startActivity(new Intent(getApplicationContext(), MainActivity.class));
+                    startActivity(new Intent(getApplicationContext(), FrontActivity.class));
                     finish();
                 }
                 else {
