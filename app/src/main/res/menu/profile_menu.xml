@@ -7,4 +7,13 @@
         android:icon="@drawable/ic_baseline_person_add_24"
         android:title="Add friend"
         app:showAsAction="ifRoom|withText" />
+    <item
+        android:id="@+id/action_accept_request"
+        android:title="Accept request" />
+    <item
+        android:id="@+id/action_send_message"
+        android:title="Message" />
+    <item
+        android:id="@+id/action_pending"
+        android:title="Pending" />
 </menu>

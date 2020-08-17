@@ -3,8 +3,8 @@
 
     <group android:checkableBehavior="single">
         <item
-            android:id="@+id/nav_profiles"
-            android:title="Profiles" />
+            android:id="@+id/nav_search_profiles"
+            android:title="Find friends" />
         <item
             android:id="@+id/nav_chats"
             android:title="Chats" />

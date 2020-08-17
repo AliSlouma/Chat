@@ -4,6 +4,7 @@ import androidx.annotation.NonNull;
 import androidx.appcompat.app.AppCompatActivity;
 
 import android.content.Intent;
+import android.media.MediaPlayer;
 import android.os.Bundle;
 import android.util.Log;
 import android.view.Menu;
@@ -13,6 +14,7 @@ import android.widget.ImageView;
 import android.widget.TextView;
 import android.widget.Toolbar;
 
+import com.google.firebase.auth.FirebaseAuth;
 import com.google.firebase.auth.FirebaseUser;
 import com.google.firebase.database.DataSnapshot;
 import com.google.firebase.database.DatabaseError;
@@ -32,11 +34,16 @@ public class UserProfileActivity extends AppCompatActivity {
     private TextView mStatusEditText;
     private ImageView mPhotoImageView;
     private String mId;
+    private Menu mBaseMenu;
+    private FirebaseAuth mFirebaseAuth;
+    private DatabaseReference mReference;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_user_profile);
+        mFirebaseAuth = FirebaseAuth.getInstance();
+        mReference = FirebaseDatabase.getInstance().getReference();
         mNameEditText = (TextView)findViewById(R.id.user_name);
         mStatusEditText = (TextView)findViewById(R.id.user_status);
         mPhotoImageView = (ImageView)findViewById(R.id.user_photo);
@@ -72,45 +79,73 @@ public class UserProfileActivity extends AppCompatActivity {
 
     @Override
     public boolean onCreateOptionsMenu(Menu menu) {
+        mBaseMenu = menu;
         MenuInflater menuInflater = getMenuInflater();
         menuInflater.inflate(R.menu.profile_menu , menu);
+        Intent intent = getIntent();
+        switch (intent.getStringExtra(FrontActivity.STATE)){
+            case FrontActivity.FRIENDS_ID:
+                 changeFriendsState(menu);
+                break;
+            case  FrontActivity.REQUEST_ID :
+                 changeRequestState(menu);
+                 break;
+            case FrontActivity.PENDING_ID:
+                 changePendingState(menu);
+                 break;
+            case FrontActivity.NOT_FRIENDS_ID :
+                changeNotFriendsState(menu);
+                break;
+        }
         return super.onCreateOptionsMenu(menu);
+    }
+
+    private void changeRequestState(Menu menu){
+        changeState(menu, R.id.action_pending, R.id.action_send_message, R.id.action_add_friend,R.id.action_accept_request);
+    }
+
+    private void changeNotFriendsState(Menu menu){
+        changeState(menu, R.id.action_pending, R.id.action_send_message, R.id.action_accept_request,R.id.action_add_friend);
+    }
+
+    private void changePendingState(Menu menu){
+        changeState(menu, R.id.action_add_friend, R.id.action_send_message, R.id.action_accept_request,R.id.action_pending);
+    }
+
+    private void changeFriendsState(Menu menu){
+        changeState(menu, R.id.action_add_friend, R.id.action_accept_request, R.id.action_pending,R.id.action_send_message);
+    }
+
+    private void changeState(Menu menu, int p, int p2, int p3 , int p4) {
+        menu.findItem(p).setVisible(false);
+        menu.findItem(p2).setVisible(false);
+        menu.findItem(p3).setVisible(false);
+        menu.findItem(p4).setVisible(true);
     }
 
     @Override
     public boolean onOptionsItemSelected(@NonNull MenuItem item) {
         int id = item.getItemId();
 
-        if(id == R.id.action_add_friend){
-            sDatabaseReference.child("FriendRequests").child(mUserID).push().setValue(FrontActivity.mMyUSer);
+        if (id == R.id.action_add_friend) {
+            mReference.child(FrontActivity.PATH_REQUESTS).child(mUserID).child(sFirebaseAuth.getUid()).setValue("");
+            changePendingState(mBaseMenu);
+        }
+        if (id == R.id.action_send_message) {
+            Intent intent = new Intent(this, ChatActivity.class);
+            intent.putExtra("receiverID", mUserID);
+            startActivity(intent);
+        }
+        if (id == R.id.action_accept_request) {
+            mReference.child(FrontActivity.PATH_FRIENDS).child(mUserID).child(mFirebaseAuth.getUid()).setValue("");
+            mReference.child(FrontActivity.PATH_FRIENDS).child(mFirebaseAuth.getUid()).child(mUserID).setValue("");
+            mReference.child(FrontActivity.PATH_REQUESTS).child(mFirebaseAuth.getUid()).child(mUserID).setValue("done");
+            changeFriendsState(mBaseMenu);
+        }
+        if (id == R.id.action_pending) {
+            sDatabaseReference.child(FrontActivity.PATH_REQUESTS).child(mUserID).child(sFirebaseAuth.getUid()).setValue("done");
+            changeNotFriendsState(mBaseMenu);
         }
         return true;
     }
-/*
-    private void sendRequest(final String name) {
-
-        ValueEventListener valueEventListener = new ValueEventListener() {
-            @Override
-            public void onDataChange(@NonNull DataSnapshot dataSnapshot) {
-                Iterator<DataSnapshot> iterator = dataSnapshot.getChildren().iterator();
-
-                while (iterator.hasNext()) {
-                    DataSnapshot data = iterator.next();
-                    if (data.child("name").getValue().equals(name))
-                        mId = data.getKey();
-                }
-                if(mId != null)
-                    sDatabaseReference.child("Users").child("friends").child(mId).child(sFirebaseAuth.getUid()).setValue("pending");
-            }
-
-            @Override
-            public void onCancelled(@NonNull DatabaseError databaseError) {
-
-            }
-        };
-
-        mDatabaseReference.child("Users").addListenerForSingleValueEvent(valueEventListener);
-    }
-
-    */
 }

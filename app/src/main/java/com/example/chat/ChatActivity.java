@@ -40,7 +40,6 @@ public class ChatActivity extends AppCompatActivity {
         messageRef.setValue(messageInstance);
         sendMessageEditText.setText("");
         displayMessageView.setText("");
-
     }
 
     private void setMessageInformation() {
@@ -124,15 +123,13 @@ public class ChatActivity extends AppCompatActivity {
         displayMessageView = findViewById(R.id.displayMessageView);
         messageInstance = new MessageInstance();
 
-
-
     }
 
     private void compareTheTwoIDS(String uid, String receiverID) {
         if(uid.compareTo(receiverID) >=0){
             messageKeyRef = FirebaseDatabase.getInstance().getReference().child("messagesContent").child(uid+receiverID);
         }else
-            messageKeyRef = FirebaseDatabase.getInstance().getReference().child("messagesContent").child(receiverID+uid).push();
+            messageKeyRef = FirebaseDatabase.getInstance().getReference().child("messagesContent").child(receiverID+uid);
        // messageKeyRef.push().setValue("");
     }
 }

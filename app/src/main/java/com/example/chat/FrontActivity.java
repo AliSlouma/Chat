@@ -28,6 +28,7 @@ import androidx.appcompat.app.AppCompatActivity;
 import androidx.appcompat.widget.Toolbar;
 
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
@@ -36,6 +37,15 @@ public class FrontActivity extends AppCompatActivity
         implements NavigationView.OnNavigationItemSelectedListener {
 
     public static final String USER_ID = "com.example.chat.user_id";
+    public static final String REQUEST_ID = "com.example.chat.request";
+    public static final String FRIENDS_ID = "com.example.chat.friends";
+    public static final String NOT_FRIENDS_ID = "com.example.chat.notFriends";
+    public static final String PENDING_ID = "com.example.chat.pending";
+    public static final String STATE = "state";
+    public static final String PATH_FRIENDS = "friends";
+    public static final String PATH_REQUESTS = "FriendRequests";
+    private int cnt = 0;
+
     FirebaseAuth mFirebaseAuth;
     FirebaseDatabase mFirebaseDatabase;
     DatabaseReference mDatabaseReference;
@@ -51,8 +61,6 @@ public class FrontActivity extends AppCompatActivity
     private AdapterView.OnItemClickListener mFriendsListner;
     private TextView mTextNotificationItemCount;
     private int mNotificationscount;
-    private ArrayAdapter mProfilesAdapet;
-    private Map<String,UserInstance> mUsers;
     private AdapterView.OnItemClickListener mProfilesListener;
     private DatabaseReference root;
     public static UserInstance mMyUSer;
@@ -62,6 +70,9 @@ public class FrontActivity extends AppCompatActivity
     private AdapterView.OnItemClickListener mRequestsListener;
     private ArrayAdapter mProfilesAdapter;
     private List<UserInstance> mProfiles;
+    private Button mSearchButton;
+    private EditText mSearchEditText;
+    private String mResult;
     // private AppBarConfiguration mAppBarConfiguration;
 
     @Override
@@ -89,13 +100,16 @@ public class FrontActivity extends AppCompatActivity
         //mDatabaseReference.child("Users").child(mFirebaseAuth.getUid()).child("friends").setValue("");
        // FriendsHandler friendsHandler = new FriendsHandler(this);
        // friendsHandler.addFriendsHandler(mFirebaseAuth.getUid());
-        mDatabaseReference.child("FriendRequests").child(mFirebaseAuth.getUid()).child(mFirebaseAuth.getUid())
+        mDatabaseReference.child(PATH_REQUESTS).child(mFirebaseAuth.getUid()).child(mFirebaseAuth.getUid())
         .setValue("");
-        mDatabaseReference.child("friends").child(mFirebaseAuth.getUid()).child(mFirebaseAuth.getUid())
+        mDatabaseReference.child(PATH_FRIENDS).child(mFirebaseAuth.getUid()).child(mFirebaseAuth.getUid())
                 .setValue("");
 
 
 
+
+        mSearchButton = (Button)findViewById(R.id.button_search);
+        mSearchEditText = (EditText)findViewById(R.id.target_of_search);
         root = mDatabaseReference.child("Users");
         root.child(mFirebaseAuth.getUid()).addListenerForSingleValueEvent(new ValueEventListener() {
             @Override
@@ -143,6 +157,7 @@ public class FrontActivity extends AppCompatActivity
     }
 
 
+
     private void setChatAdapter() {
         mDatabaseReference.child("friends").child(mFirebaseAuth.getUid()).addValueEventListener(new ValueEventListener() {
             @Override
@@ -166,6 +181,8 @@ public class FrontActivity extends AppCompatActivity
 
 
 
+
+
     private void arrayAdapterFunc() {
         //mChats.add("Test Chat");
         mChatsAdapter = new ArrayAdapter<>(getApplicationContext(),android.R.layout.simple_list_item_1 , mChats);
@@ -181,7 +198,7 @@ public class FrontActivity extends AppCompatActivity
         };
         showChats();
         initializeFriendsAdapter();
-    //    initializeProfileAdapter();
+        initializeProfileAdapter();
         initializeRequestsAdapter();
     }
 
@@ -201,13 +218,14 @@ public class FrontActivity extends AppCompatActivity
             public void onItemClick(AdapterView<?> adapterView, View view, int postion, long id) {
                 Intent intent = new Intent(getApplicationContext() , UserProfileActivity.class);
                 intent.putExtra(USER_ID, mFriends.get(postion).getUId());
+                intent.putExtra(STATE,FRIENDS_ID);
                 startActivity(intent);
             }
         };
-        mDatabaseReference.child("friends").child(mFirebaseAuth.getUid()).addValueEventListener(new ValueEventListener() {
+        mDatabaseReference.child(PATH_FRIENDS).child(mFirebaseAuth.getUid()).addValueEventListener(new ValueEventListener() {
             @Override
             public void onDataChange(@NonNull DataSnapshot dataSnapshot) {
-
+                mFriends.clear();
                 Iterable<DataSnapshot> iterable = dataSnapshot.getChildren();
                 Iterator<DataSnapshot> iterator = iterable.iterator();
                 while (iterator.hasNext()){
@@ -217,6 +235,7 @@ public class FrontActivity extends AppCompatActivity
                         @Override
                         public void onDataChange(@NonNull DataSnapshot dataSnapshot) {
                             mFriends.add(dataSnapshot.getValue(UserInstance.class));
+                            mFriendsAdapter.notifyDataSetChanged();
                         }
 
                         @Override
@@ -225,7 +244,7 @@ public class FrontActivity extends AppCompatActivity
                         }
                     });
                 }
-                mFriendsAdapter.notifyDataSetChanged();
+
             }
 
 
@@ -246,30 +265,40 @@ public class FrontActivity extends AppCompatActivity
             @Override
             public void onItemClick(AdapterView<?> adapterView, View view, int postion, long id) {
                 Intent intent = new Intent(getApplicationContext() , UserProfileActivity.class);
-                intent.putExtra(USER_ID, mFriends.get(postion).getUId());
+                intent.putExtra(USER_ID, mRequest.get(postion).getUId());
+                intent.putExtra(STATE,REQUEST_ID);
                 startActivity(intent);
             }
         };
 
-        mDatabaseReference.child("FriendRequests").child(mFirebaseAuth.getUid()).addValueEventListener(new ValueEventListener() {
+        mDatabaseReference.child(PATH_REQUESTS).child(mFirebaseAuth.getUid()).addValueEventListener(new ValueEventListener() {
             @Override
             public void onDataChange(@NonNull DataSnapshot dataSnapshot) {
+                mRequest.clear();
                 Iterable<DataSnapshot> iterable = dataSnapshot.getChildren();
                 Iterator<DataSnapshot> iterator = iterable.iterator();
                 while (iterator.hasNext()){
                     DataSnapshot data = iterator.next();
                     String id = data.getKey();
-                    root.child(id).addListenerForSingleValueEvent(new ValueEventListener() {
-                        @Override
-                        public void onDataChange(@NonNull DataSnapshot dataSnapshot) {
-                            mRequest.add(dataSnapshot.getValue(UserInstance.class));
-                        }
-                        @Override
-                        public void onCancelled(@NonNull DatabaseError databaseError) {
+                    if(data.getValue() != "done") {
+                        root.child(id).addListenerForSingleValueEvent(new ValueEventListener() {
+                            @Override
+                            public void onDataChange(@NonNull DataSnapshot dataSnapshot) {
+                                mRequest.add(dataSnapshot.getValue(UserInstance.class));
+                                mRequestAdapter.notifyDataSetChanged();
+                            }
 
-                        }
-                    });
+                            @Override
+                            public void onCancelled(@NonNull DatabaseError databaseError) {
+
+                            }
+                        });
+                    }else{
+                        mDatabaseReference.child("FriendRequests").child(mFirebaseAuth.getUid()).child(id).removeValue();
+                        mRequestAdapter.notifyDataSetChanged();
+                    }
                 }
+
             }
 
             @Override
@@ -278,29 +307,50 @@ public class FrontActivity extends AppCompatActivity
             }
         });
     }
-/*
+
     private void initializeProfileAdapter(){
-        mUsers = new HashMap<>();
         mProfiles = new ArrayList<>();
         mProfilesAdapter = new ArrayAdapter(this,android.R.layout.simple_list_item_1, mProfiles);
         mProfilesListener = new AdapterView.OnItemClickListener() {
             @Override
             public void onItemClick(AdapterView<?> adapterView, View view, int i, long l) {
-                Intent intent = new Intent(getApplicationContext() , UserProfileActivity.class);
-                intent.putExtra(USER_ID,mProfiles.get(i).getUId());
-                startActivity(intent);
+                cnt = 0;
+                Intent intent = new Intent(getApplicationContext(), UserProfileActivity.class);
+                intent.putExtra(USER_ID, mProfiles.get(i).getUId());
+                searchState(mProfiles.get(i).getUId(),intent);
             }
         };
+    }
 
-        mDatabaseReference.child("Users").addValueEventListener(new ValueEventListener() {
+    private void searchState(final String userId,final Intent intent) {
+        mDatabaseReference.child(PATH_FRIENDS).child(mFirebaseAuth.getUid()).addListenerForSingleValueEvent(new ValueEventListener() {
             @Override
             public void onDataChange(@NonNull DataSnapshot dataSnapshot) {
-                Iterable<DataSnapshot> iterable = dataSnapshot.getChildren();
-                Iterator<DataSnapshot> iterator = iterable.iterator();
-                while (iterator.hasNext()) {
-                   DataSnapshot dataSnapshotforItem = iterator.next();
-                  //  UserInstance userInstance = dataSnapshot.getValue();
-                   // mProfiles.add(userInstance);
+                if(dataSnapshot.child(userId).exists())
+                    mResult = FRIENDS_ID;
+                cnt++;
+                if(cnt == 4) {
+                    intent.putExtra(STATE, mResult);
+                    startActivity(intent);
+                }
+
+            }
+
+            @Override
+            public void onCancelled(@NonNull DatabaseError databaseError) {
+
+            }
+        });
+
+        mDatabaseReference.child(PATH_REQUESTS).child(mFirebaseAuth.getUid()).addListenerForSingleValueEvent(new ValueEventListener() {
+            @Override
+            public void onDataChange(@NonNull DataSnapshot dataSnapshot) {
+                if(dataSnapshot.child(userId).exists())
+                    mResult = REQUEST_ID;
+                cnt++;
+                if(cnt == 4) {
+                    intent.putExtra(STATE, mResult);
+                    startActivity(intent);
                 }
             }
 
@@ -310,10 +360,32 @@ public class FrontActivity extends AppCompatActivity
             }
         });
 
+        mDatabaseReference.child(PATH_REQUESTS).child(userId).addListenerForSingleValueEvent(new ValueEventListener() {
+            @Override
+            public void onDataChange(@NonNull DataSnapshot dataSnapshot) {
+                if(dataSnapshot.child(mFirebaseAuth.getUid()).exists())
+                    mResult = PENDING_ID;
+                cnt++;
+                if(cnt == 4) {
+                    intent.putExtra(STATE, mResult);
+                    startActivity(intent);
+                }
+            }
 
+            @Override
+            public void onCancelled(@NonNull DatabaseError databaseError) {
+
+            }
+        });
+
+        mResult = NOT_FRIENDS_ID;
+        cnt++;
+        if(cnt == 4) {
+            intent.putExtra(STATE, mResult);
+            startActivity(intent);
+        }
     }
 
- */
 
     @Override
     public boolean onNavigationItemSelected(@NonNull MenuItem item) {
@@ -322,11 +394,11 @@ public class FrontActivity extends AppCompatActivity
             showChats();
         }else if(id == R.id.nav_friends){
             showFriends();
-        }else if(id == R.id.nav_profiles){
-        showProfiles();
-    }else if(id == R.id.nav_requests){
-        showRequests();
-    }
+        }else if(id == R.id.nav_search_profiles){
+             showProfiles();
+         }else if(id == R.id.nav_requests){
+              showRequests();
+      }
         DrawerLayout drawer = (DrawerLayout) findViewById(R.id.drawer_layout);
         drawer.closeDrawer(GravityCompat.START);
        // item.setChecked(true);
@@ -347,16 +419,44 @@ public class FrontActivity extends AppCompatActivity
     private void showRequests() {
 
         listView.setAdapter(mRequestAdapter);
+       // mRequestAdapter.notifyDataSetChanged();
         listView.setOnItemClickListener(mRequestsListener);
 
     }
     private void showProfiles() {
         listView.setAdapter(mProfilesAdapter);
         listView.setOnItemClickListener(mProfilesListener);
+        mSearchButton.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View view) {
+                final String name = mSearchEditText.getText().toString();
+                root.addListenerForSingleValueEvent(new ValueEventListener() {
+                    @Override
+                    public void onDataChange(@NonNull DataSnapshot dataSnapshot) {
+                        mProfiles.clear();
+                        Iterator<DataSnapshot> itr = dataSnapshot.getChildren().iterator();
+                        while (itr.hasNext()){
+                            dataSnapshot = itr.next();
+                            UserInstance user = dataSnapshot.getValue(UserInstance.class);
+                            if(user.getName().matches(name + "\\w*")){
+                               mProfiles.add(user);
+                               mProfilesAdapter.notifyDataSetChanged();
+                            }
+                        }
+                    }
+
+                    @Override
+                    public void onCancelled(@NonNull DatabaseError databaseError) {
+
+                    }
+                });
+            }
+        });
     }
 
 
-
-
-
+    @Override
+    protected void onResume() {
+        super.onResume();
+    }
 }
