@@ -7,6 +7,7 @@ import android.content.Intent;
 import android.os.Bundle;
 import android.view.View;
 import android.widget.EditText;
+import android.widget.ScrollView;
 import android.widget.TextView;
 
 import com.google.firebase.auth.FirebaseAuth;
@@ -28,6 +29,8 @@ public class ChatActivity extends AppCompatActivity {
     EditText sendMessageEditText;
     TextView displayMessageView;
     MessageInstance messageInstance;
+    ScrollView scrollView;
+
 
 
     public void sendButton(View view) {
@@ -36,29 +39,21 @@ public class ChatActivity extends AppCompatActivity {
         String key = messageKeyRef.push().getKey();
         messageRef = messageKeyRef.child(key);
         messageInstance.setMessage(getMessage);
-        setMessageInformation();
+        setTimeInformation();
+        scrollView.fullScroll(ScrollView.FOCUS_DOWN);
         messageRef.setValue(messageInstance);
         sendMessageEditText.setText("");
         displayMessageView.setText("");
+        scrollView.postDelayed(new Runnable() {
+            @Override
+            public void run() {
+                scrollView.fullScroll(View.FOCUS_DOWN);
+            }
+        }, 0);
+
     }
 
-    private void setMessageInformation() {
-        userRef.addValueEventListener(new ValueEventListener() {
-            @Override
-            public void onDataChange(@NonNull DataSnapshot dataSnapshot) {
-                if(dataSnapshot.child("name").exists()){
-                    String name = dataSnapshot.child("name").getValue().toString();
-                    messageInstance.setSender(name);
-                }
-            }
-
-            @Override
-            public void onCancelled(@NonNull DatabaseError databaseError) {
-
-            }
-        });
-
-
+    private void setTimeInformation() {
         Calendar calendar = Calendar.getInstance();
         SimpleDateFormat dateFormat = new SimpleDateFormat("dd MM , YYYY");
         SimpleDateFormat timeFormat = new SimpleDateFormat("hh:mm a");
@@ -75,6 +70,7 @@ public class ChatActivity extends AppCompatActivity {
             @Override
             public void onDataChange(@NonNull DataSnapshot dataSnapshot) {
                 displayMessages(dataSnapshot);
+
             }
 
             @Override
@@ -89,20 +85,22 @@ public class ChatActivity extends AppCompatActivity {
         Iterator<DataSnapshot> iterator = iterable.iterator();
         MessageInstance messageInstance1;
         while (iterator.hasNext()){
-        //    String message = (String) ((DataSnapshot)iterator.next()).getValue();
 
             HashMap <String ,String> map = (HashMap<String, String>) iterator.next().getValue();
 
-//            DataSnapshot data =  iterator.next();
-//           // messageInstance1 = data.getValue(MessageInstance.class);
-//
-//            String date = (String) data.getValue();
-//            String seder = (String) data.getValue();
-//            String datee = (String) data.getValue();
-            int x = 2;
             displayMessageView.append(map.get("sender") +"\n" +
             map.get("message") +"\n" + map.get("time") + "\t" + map.get("date")+ "\n\n");
+
+            scrollView.postDelayed(new Runnable() {
+                @Override
+                public void run() {
+                    scrollView.fullScroll(View.FOCUS_DOWN);
+                }
+            }, 500);
+
         }
+
+
     }
 
     protected void onCreate(Bundle savedInstanceState) {
@@ -110,19 +108,44 @@ public class ChatActivity extends AppCompatActivity {
         setContentView(R.layout.activity_chat);
         Intent intent = getIntent();
         String receiverID = intent.getStringExtra("receiverID");
+        scrollView = (ScrollView) findViewById(R.id.chatScroll);
+        scrollView.postDelayed(new Runnable() {
+            @Override
+            public void run() {
+                scrollView.fullScroll(View.FOCUS_DOWN);
+            }
+        }, 0);
+
 
         firebaseAuth = FirebaseAuth.getInstance();
 
         compareTheTwoIDS(firebaseAuth.getUid() , receiverID);
-
-
 
         userRef = FirebaseDatabase.getInstance().getReference().child("Users").child(firebaseAuth.getUid());
 
         sendMessageEditText = findViewById(R.id.sendMessageEditView);
         displayMessageView = findViewById(R.id.displayMessageView);
         messageInstance = new MessageInstance();
+        getUserName();
 
+
+    }
+
+    private void getUserName() {
+        userRef.addValueEventListener(new ValueEventListener() {
+            @Override
+            public void onDataChange(@NonNull DataSnapshot dataSnapshot) {
+                if(dataSnapshot.child("name").exists()){
+                    String name = dataSnapshot.child("name").getValue().toString();
+                    messageInstance.setSender(name);
+                }
+            }
+
+            @Override
+            public void onCancelled(@NonNull DatabaseError databaseError) {
+
+            }
+        });
     }
 
     private void compareTheTwoIDS(String uid, String receiverID) {

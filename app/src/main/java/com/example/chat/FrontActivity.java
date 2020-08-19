@@ -12,6 +12,7 @@ import android.widget.EditText;
 import android.widget.ListView;
 import android.widget.TextView;
 
+
 import com.google.android.material.navigation.NavigationView;
 import com.google.firebase.auth.FirebaseAuth;
 import com.google.firebase.database.DataSnapshot;
@@ -31,7 +32,7 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
-import java.util.Map;
+import java.util.concurrent.ExecutionException;
 
 public class FrontActivity extends AppCompatActivity
         implements NavigationView.OnNavigationItemSelectedListener {
@@ -48,10 +49,10 @@ public class FrontActivity extends AppCompatActivity
 
     FirebaseAuth mFirebaseAuth;
     FirebaseDatabase mFirebaseDatabase;
-    DatabaseReference mDatabaseReference;
+    DatabaseReference mDatabaseReference , forChats;
     ListView listView;
     ArrayAdapter arrayAdapter;
-    ArrayList<String> mChats;
+    List<String> mChats;
     private EditText mNameEditText;
     private Button mAddButton;
     private String mId;
@@ -73,6 +74,7 @@ public class FrontActivity extends AppCompatActivity
     private Button mSearchButton;
     private EditText mSearchEditText;
     private String mResult;
+    private HashMap<String,String > nameKeysMap;
     // private AppBarConfiguration mAppBarConfiguration;
 
     @Override
@@ -93,23 +95,22 @@ public class FrontActivity extends AppCompatActivity
         mFirebaseAuth = FirebaseAuth.getInstance();
         mFirebaseDatabase = FirebaseDatabase.getInstance();
         mDatabaseReference = mFirebaseDatabase.getReference();
+        forChats = FirebaseDatabase.getInstance().getReference();
         listView = findViewById(R.id.chat_list);
 
         sendToSignin();
 
         //mDatabaseReference.child("Users").child(mFirebaseAuth.getUid()).child("friends").setValue("");
-       // FriendsHandler friendsHandler = new FriendsHandler(this);
-       // friendsHandler.addFriendsHandler(mFirebaseAuth.getUid());
+        // FriendsHandler friendsHandler = new FriendsHandler(this);
+        // friendsHandler.addFriendsHandler(mFirebaseAuth.getUid());
         mDatabaseReference.child(PATH_REQUESTS).child(mFirebaseAuth.getUid()).child(mFirebaseAuth.getUid())
-        .setValue("");
+                .setValue("");
         mDatabaseReference.child(PATH_FRIENDS).child(mFirebaseAuth.getUid()).child(mFirebaseAuth.getUid())
                 .setValue("");
 
 
-
-
-        mSearchButton = (Button)findViewById(R.id.button_search);
-        mSearchEditText = (EditText)findViewById(R.id.target_of_search);
+        mSearchButton = (Button) findViewById(R.id.button_search);
+        mSearchEditText = (EditText) findViewById(R.id.target_of_search);
         root = mDatabaseReference.child("Users");
         root.child(mFirebaseAuth.getUid()).addListenerForSingleValueEvent(new ValueEventListener() {
             @Override
@@ -122,13 +123,14 @@ public class FrontActivity extends AppCompatActivity
 
             }
         });
-
+       // nameKeysMap =null;
+        nameKeysMap = new HashMap<>();
         mChats = new ArrayList<>();
         setChatAdapter();
+
         arrayAdapterFunc();
     }
 
-    @Override
     public boolean onCreateOptionsMenu(Menu menu) {
         // Inflate the menu; this adds items to the action bar if it is present.
         getMenuInflater().inflate(R.menu.front, menu);
@@ -165,8 +167,22 @@ public class FrontActivity extends AppCompatActivity
                 if(dataSnapshot.exists()){
                     Iterator iterator = dataSnapshot.getChildren().iterator();
                     while (iterator.hasNext()){
-                        String friend = (String) ((DataSnapshot)(iterator.next())).getKey();
-                        mChats.add(friend);
+                        final String friendKey = (String) ((DataSnapshot)(iterator.next())).getKey();
+                        root.child(friendKey).addValueEventListener(new ValueEventListener() {
+
+                            public void onDataChange(@NonNull DataSnapshot dataSnapshot) {
+                                    String friend = (String) dataSnapshot.child("name").getValue();
+                                    mChats.add(friend);
+                                    nameKeysMap.put(friend,friendKey);
+                                    mChatsAdapter.notifyDataSetChanged();
+                            }
+
+                            @Override
+                            public void onCancelled(@NonNull DatabaseError databaseError) {
+
+                            }
+                        });
+
                     }
                 }
             }
@@ -180,19 +196,16 @@ public class FrontActivity extends AppCompatActivity
 
 
 
-
-
-
     private void arrayAdapterFunc() {
         //mChats.add("Test Chat");
         mChatsAdapter = new ArrayAdapter<>(getApplicationContext(),android.R.layout.simple_list_item_1 , mChats);
-       //listView.setAdapter(arrayAdapter);
+        listView.setAdapter(mChatsAdapter);
         mChatsListner = new AdapterView.OnItemClickListener() {
             @Override
             public void onItemClick(AdapterView<?> adapterView, View view, int postion, long id) {
                 Intent intent = new Intent(getApplicationContext() , ChatActivity.class);
-                String receiverID = (String) adapterView.getItemAtPosition(postion);
-                intent.putExtra("receiverID",receiverID);
+                String receiver = (String) adapterView.getItemAtPosition(postion);
+                intent.putExtra("receiverID",nameKeysMap.get(receiver));
                 startActivity(intent);
             }
         };
