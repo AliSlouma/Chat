@@ -37,7 +37,7 @@ public class ProfileActivity extends AppCompatActivity {
 
         else{
 
-            UserInstance userInstance = new UserInstance(firebaseAuth.getUid(),"",name.getText().toString(),status.getText().toString());
+            UserInstance userInstance = new UserInstance(firebaseAuth.getUid(),"",name.getText().toString(),status.getText().toString(),"");
 
             root.child("Users").child(firebaseAuth.getCurrentUser().getUid()).setValue(userInstance).addOnCompleteListener(new OnCompleteListener<Void>() {
                 @Override

@@ -7,13 +7,23 @@ public class UserInstance {
     private String mE_mail;
     private String mName;
     private String mStatus;
+    private String mImageUri;
+
+    public String getImageUri() {
+        return mImageUri;
+    }
+
+    public void setImageUri(String imageUri) {
+        mImageUri = imageUri;
+    }
 
     public UserInstance(){}
-    public UserInstance(String UId, String e_mail, String name, String status) {
+    public UserInstance(String UId, String e_mail, String name, String status,String uri) {
         mUId = UId;
         mE_mail = e_mail;
         mName = name;
         mStatus = status;
+        mImageUri = uri;
     }
 
     @NonNull

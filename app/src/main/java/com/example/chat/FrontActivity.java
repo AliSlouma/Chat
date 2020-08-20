@@ -42,6 +42,7 @@ public class FrontActivity extends AppCompatActivity
     public static final String FRIENDS_ID = "com.example.chat.friends";
     public static final String NOT_FRIENDS_ID = "com.example.chat.notFriends";
     public static final String PENDING_ID = "com.example.chat.pending";
+    public static final String USER_PROFILE_ID = "com.example.chat.profileId";
     public static final String STATE = "state";
     public static final String PATH_FRIENDS = "friends";
     public static final String PATH_REQUESTS = "FriendRequests";
@@ -411,7 +412,12 @@ public class FrontActivity extends AppCompatActivity
              showProfiles();
          }else if(id == R.id.nav_requests){
               showRequests();
-      }
+      } else if(id == R.id.nav_profile){
+            Intent intent = new Intent(this,UserProfileActivity.class);
+            intent.putExtra(USER_ID,mFirebaseAuth.getUid());
+            intent.putExtra(STATE,USER_PROFILE_ID);
+            startActivity(intent);
+        }
         DrawerLayout drawer = (DrawerLayout) findViewById(R.id.drawer_layout);
         drawer.closeDrawer(GravityCompat.START);
        // item.setChecked(true);
