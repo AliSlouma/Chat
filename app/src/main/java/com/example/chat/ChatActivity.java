@@ -2,6 +2,8 @@ package com.example.chat;
 
 import androidx.annotation.NonNull;
 import androidx.appcompat.app.AppCompatActivity;
+import androidx.recyclerview.widget.LinearLayoutManager;
+import androidx.recyclerview.widget.RecyclerView;
 
 import android.content.Intent;
 import android.os.Bundle;
@@ -18,9 +20,11 @@ import com.google.firebase.database.FirebaseDatabase;
 import com.google.firebase.database.ValueEventListener;
 
 import java.text.SimpleDateFormat;
+import java.util.ArrayList;
 import java.util.Calendar;
 import java.util.HashMap;
 import java.util.Iterator;
+import java.util.List;
 
 public class ChatActivity extends AppCompatActivity {
 
@@ -30,26 +34,23 @@ public class ChatActivity extends AppCompatActivity {
     TextView displayMessageView;
     MessageInstance messageInstance;
     ScrollView scrollView;
+    String receiverID;
+    String senderID;
+    RecyclerView chatRecyclerView;
+    LinearLayoutManager linearLayoutManager;
+    private  MessageAdapter messageAdapter;
+    private final List<MessageInstance> messageInstanceList = new ArrayList<>();
 
 
 
     public void sendButton(View view) {
         String getMessage = sendMessageEditText.getText().toString();
-
         String key = messageKeyRef.push().getKey();
         messageRef = messageKeyRef.child(key);
         messageInstance.setMessage(getMessage);
         setTimeInformation();
-        scrollView.fullScroll(ScrollView.FOCUS_DOWN);
         messageRef.setValue(messageInstance);
         sendMessageEditText.setText("");
-        displayMessageView.setText("");
-        scrollView.postDelayed(new Runnable() {
-            @Override
-            public void run() {
-                scrollView.fullScroll(View.FOCUS_DOWN);
-            }
-        }, 0);
 
     }
 
@@ -81,22 +82,43 @@ public class ChatActivity extends AppCompatActivity {
     }
 
     private void displayMessages(DataSnapshot dataSnapshot) {
+        messageInstanceList.clear();
         Iterable<DataSnapshot> iterable = dataSnapshot.getChildren();
         Iterator<DataSnapshot> iterator = iterable.iterator();
-        MessageInstance messageInstance1;
+
         while (iterator.hasNext()){
-
-            HashMap <String ,String> map = (HashMap<String, String>) iterator.next().getValue();
-
-            displayMessageView.append(map.get("sender") +"\n" +
-            map.get("message") +"\n" + map.get("time") + "\t" + map.get("date")+ "\n\n");
-
-            scrollView.postDelayed(new Runnable() {
+            String getKey  = iterator.next().getKey();
+            DatabaseReference reference = messageKeyRef.child(getKey);
+            reference.addValueEventListener(new ValueEventListener() {
                 @Override
-                public void run() {
-                    scrollView.fullScroll(View.FOCUS_DOWN);
+                public void onDataChange(@NonNull DataSnapshot dataSnapshot) {
+                    if(dataSnapshot.exists()){
+                        messageInstanceList.add(dataSnapshot.getValue(MessageInstance.class));
+                        messageAdapter.notifyDataSetChanged();
+
+                    }
+
                 }
-            }, 500);
+
+                @Override
+                public void onCancelled(@NonNull DatabaseError databaseError) {
+
+                }
+            });
+
+            messageAdapter.notifyDataSetChanged();
+
+      //      HashMap <String ,String> map = (HashMap<String, String>) iterator.next().getValue();
+
+//            displayMessageView.append(map.get("sender") +"\n" +
+//            map.get("message") +"\n" + map.get("time") + "\t" + map.get("date")+ "\n\n");
+//
+//            scrollView.postDelayed(new Runnable() {
+//                @Override
+//                public void run() {
+//                    scrollView.fullScroll(View.FOCUS_DOWN);
+//                }
+//            }, 500);
 
         }
 
@@ -107,26 +129,36 @@ public class ChatActivity extends AppCompatActivity {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_chat);
         Intent intent = getIntent();
-        String receiverID = intent.getStringExtra("receiverID");
-        scrollView = (ScrollView) findViewById(R.id.chatScroll);
-        scrollView.postDelayed(new Runnable() {
-            @Override
-            public void run() {
-                scrollView.fullScroll(View.FOCUS_DOWN);
-            }
-        }, 0);
+        receiverID = intent.getStringExtra("receiverID");
+      //  scrollView = (ScrollView) findViewById(R.id.chatScroll);
+//        scrollView.postDelayed(new Runnable() {
+//            @Override
+//            public void run() {
+//                scrollView.fullScroll(View.FOCUS_DOWN);
+//            }
+//        }, 0);
 
 
         firebaseAuth = FirebaseAuth.getInstance();
+        senderID = firebaseAuth.getUid();
+        compareTheTwoIDS(senderID, receiverID);
 
-        compareTheTwoIDS(firebaseAuth.getUid() , receiverID);
 
         userRef = FirebaseDatabase.getInstance().getReference().child("Users").child(firebaseAuth.getUid());
 
         sendMessageEditText = findViewById(R.id.sendMessageEditView);
-        displayMessageView = findViewById(R.id.displayMessageView);
+        //displayMessageView = findViewById(R.id.displayMessageView);
         messageInstance = new MessageInstance();
+        messageInstance.setmSenderID(senderID);
+
         getUserName();
+      //  messageInstanceList = new ArrayList<>();
+        messageAdapter = new MessageAdapter(messageInstanceList);
+        chatRecyclerView = findViewById(R.id.recycle);
+        linearLayoutManager = new LinearLayoutManager(this);
+        chatRecyclerView.setLayoutManager(linearLayoutManager);
+        chatRecyclerView.setAdapter(messageAdapter);
+
 
 
     }

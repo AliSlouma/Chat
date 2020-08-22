@@ -7,17 +7,30 @@ public class MessageInstance {
     private boolean mSeen;
     private String mSender;
 
-    public MessageInstance(String message, String time,String date, boolean seen, String sender) {
-        mMessage = message;
-        mTime = time;
-        mSeen = seen;
-        mSender = sender;
-        mDate = date;
+
+
+    private String mSenderID;
+
+    public MessageInstance(String mMessage, String mTime, String mDate, boolean mSeen, String mSender, String mSenderID) {
+        this.mMessage = mMessage;
+        this.mTime = mTime;
+        this.mDate = mDate;
+        this.mSeen = mSeen;
+        this.mSender = mSender;
+        this.mSenderID = mSenderID;
     }
+
+
 
     public MessageInstance() {
     }
+    public String getmSenderID() {
+        return mSenderID;
+    }
 
+    public void setmSenderID(String mSenderID) {
+        this.mSenderID = mSenderID;
+    }
     public String getMessage() {
         return mMessage;
     }

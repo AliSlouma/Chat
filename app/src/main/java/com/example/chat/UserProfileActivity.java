@@ -68,7 +68,6 @@ public class UserProfileActivity extends AppCompatActivity {
     private StorageReference mProfileRef;
     private Uri mDownloadUri;
 
-    @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_user_profile);
