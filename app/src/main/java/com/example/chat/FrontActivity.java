@@ -27,12 +27,13 @@ import androidx.core.view.GravityCompat;
 import androidx.drawerlayout.widget.DrawerLayout;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.appcompat.widget.Toolbar;
+import androidx.recyclerview.widget.LinearLayoutManager;
+import androidx.recyclerview.widget.RecyclerView;
 
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
-import java.util.concurrent.ExecutionException;
 
 public class FrontActivity extends AppCompatActivity
         implements NavigationView.OnNavigationItemSelectedListener {
@@ -76,6 +77,9 @@ public class FrontActivity extends AppCompatActivity
     private EditText mSearchEditText;
     private String mResult;
     private HashMap<String,String > nameKeysMap;
+    private FriendsRecyclerAdapter mFriendsRecyclerAdapter;
+    private RecyclerView mFront_list;
+    private LinearLayoutManager mFriendsLayoutManager;
     // private AppBarConfiguration mAppBarConfiguration;
 
     @Override
@@ -97,7 +101,7 @@ public class FrontActivity extends AppCompatActivity
         mFirebaseDatabase = FirebaseDatabase.getInstance();
         mDatabaseReference = mFirebaseDatabase.getReference();
         forChats = FirebaseDatabase.getInstance().getReference();
-        listView = findViewById(R.id.chat_list);
+        mFront_list = (RecyclerView)findViewById(R.id.chat_list);
 
         sendToSignin();
 
@@ -127,9 +131,10 @@ public class FrontActivity extends AppCompatActivity
        // nameKeysMap =null;
         nameKeysMap = new HashMap<>();
         mChats = new ArrayList<>();
-        setChatAdapter();
-
-        arrayAdapterFunc();
+      //  setChatAdapter();
+       initializeFriendsRecyclerAdapter();
+       showFriends();
+       // arrayAdapterFunc();
     }
 
     public boolean onCreateOptionsMenu(Menu menu) {
@@ -223,6 +228,44 @@ public class FrontActivity extends AppCompatActivity
             finish();
         }
     }
+
+    private void initializeFriendsRecyclerAdapter(){
+        mFriends = new ArrayList<>();
+        mFriendsLayoutManager = new LinearLayoutManager(this);
+        mFriendsRecyclerAdapter = new FriendsRecyclerAdapter(mFriends,this);
+        mDatabaseReference.child(PATH_FRIENDS).child(mFirebaseAuth.getUid()).addValueEventListener(new ValueEventListener() {
+            @Override
+            public void onDataChange(@NonNull DataSnapshot dataSnapshot) {
+                mFriends.clear();
+                Iterable<DataSnapshot> iterable = dataSnapshot.getChildren();
+                Iterator<DataSnapshot> iterator = iterable.iterator();
+                while (iterator.hasNext()){
+                    DataSnapshot data = iterator.next();
+                    String id = data.getKey();
+                    root.child(id).addListenerForSingleValueEvent(new ValueEventListener() {
+                        @Override
+                        public void onDataChange(@NonNull DataSnapshot dataSnapshot) {
+                            mFriendsRecyclerAdapter.mFriends.add(dataSnapshot.getValue(UserInstance.class));
+                            mFriendsRecyclerAdapter.notifyDataSetChanged();
+                        }
+
+                        @Override
+                        public void onCancelled(@NonNull DatabaseError databaseError) {
+
+                        }
+                    });
+                }
+
+            }
+
+
+            @Override
+            public void onCancelled(@NonNull DatabaseError databaseError) {
+
+            }
+        });
+    }
+
     private void initializeFriendsAdapter(){
 
         mFriends = new ArrayList<>();
@@ -271,8 +314,8 @@ public class FrontActivity extends AppCompatActivity
 
     }
 
-    private void initializeRequestsAdapter(){
 
+    private void initializeRequestsAdapter(){
         mRequest = new ArrayList<>();
         mRequestAdapter = new ArrayAdapter<>(getApplicationContext(),android.R.layout.simple_list_item_1 , mRequest);
         mRequestsListener = new AdapterView.OnItemClickListener() {
@@ -425,8 +468,8 @@ public class FrontActivity extends AppCompatActivity
     }
 
     private void showFriends() {
-        listView.setAdapter(mFriendsAdapter);
-        listView.setOnItemClickListener(mFriendsListner);
+        mFront_list.setLayoutManager(mFriendsLayoutManager);
+        mFront_list.setAdapter(mFriendsRecyclerAdapter);
     }
 
     private void showChats() {

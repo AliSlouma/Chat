@@ -4,47 +4,38 @@ import androidx.annotation.NonNull;
 import androidx.appcompat.app.AppCompatActivity;
 
 import android.app.Activity;
+import android.app.AlertDialog;
+import android.content.DialogInterface;
 import android.content.Intent;
 import android.graphics.Bitmap;
-import android.media.MediaPlayer;
 import android.net.Uri;
 import android.os.Bundle;
 import android.provider.MediaStore;
+import android.text.InputType;
 import android.util.Log;
 import android.view.Menu;
 import android.view.MenuInflater;
 import android.view.MenuItem;
 import android.view.View;
 import android.widget.Button;
+import android.widget.EditText;
 import android.widget.ImageView;
 import android.widget.TextView;
-import android.widget.Toolbar;
 
 import com.bumptech.glide.Glide;
-import com.bumptech.glide.load.Options;
-import com.bumptech.glide.load.model.stream.BaseGlideUrlLoader;
-import com.bumptech.glide.request.RequestOptions;
-import com.google.android.gms.tasks.Continuation;
-import com.google.android.gms.tasks.OnCompleteListener;
-import com.google.android.gms.tasks.OnFailureListener;
-import com.google.android.gms.tasks.OnSuccessListener;
-import com.google.android.gms.tasks.Task;
 import com.google.firebase.auth.FirebaseAuth;
-import com.google.firebase.auth.FirebaseUser;
 import com.google.firebase.database.DataSnapshot;
 import com.google.firebase.database.DatabaseError;
 import com.google.firebase.database.DatabaseReference;
 import com.google.firebase.database.FirebaseDatabase;
 import com.google.firebase.database.ValueEventListener;
-import com.google.firebase.database.core.Context;
 import com.google.firebase.storage.FirebaseStorage;
 import com.google.firebase.storage.StorageReference;
-import com.google.firebase.storage.UploadTask;
 
-import java.io.ByteArrayOutputStream;
 import java.io.FileNotFoundException;
 import java.io.IOException;
-import java.util.Iterator;
+
+import de.hdodenhof.circleimageview.CircleImageView;
 
 import static com.example.chat.FirebaseUtil.*;
 
@@ -52,6 +43,9 @@ public class UserProfileActivity extends AppCompatActivity {
 
     private static final int GET_FROM_GALLERY = 3;
     private static final String PHOTO = "Photo";
+    private static final String NAME = "name";
+    private static final String STATUS = "status";
+    private static final String IMAGE_URI = "imageUri";
     private String mUserID;
     private DatabaseReference mUserInfo;
     private TextView mNameEditText;
@@ -62,11 +56,13 @@ public class UserProfileActivity extends AppCompatActivity {
     private FirebaseAuth mFirebaseAuth;
     private DatabaseReference mReference;
     private Button mUploadButton;
-    private ImageView mUserPhoto;
+    private CircleImageView mUserPhoto;
     private FirebaseStorage mFirebaseStorage;
     private StorageReference mStorageRef;
     private StorageReference mProfileRef;
     private Uri mDownloadUri;
+    private AlertDialog.Builder mDialogName;
+    private AlertDialog.Builder mDialogStatus;
 
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -75,11 +71,62 @@ public class UserProfileActivity extends AppCompatActivity {
         mReference = FirebaseDatabase.getInstance().getReference();
         mNameEditText = (TextView) findViewById(R.id.user_name);
         mStatusEditText = (TextView) findViewById(R.id.user_status);
-        mPhotoImageView = (ImageView) findViewById(R.id.user_photo);
+        mPhotoImageView = (ImageView) findViewById(R.id.profile_photo);
         mUploadButton = (Button) findViewById(R.id.action_upload_photo);
         mFirebaseStorage = FirebaseStorage.getInstance();
         mStorageRef = mFirebaseStorage.getReferenceFromUrl("gs://chat-d4365.appspot.com");
         displayStateValue();
+
+        createDialogs();
+        Button button = (Button) findViewById(R.id.button_edit_name);
+        button.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View view) {
+                final EditText input = new EditText(getBaseContext());
+                input.setInputType(InputType.TYPE_CLASS_TEXT);
+                mDialogName.setView(input);
+                mDialogName.setPositiveButton("OK", new DialogInterface.OnClickListener() {
+                    @Override
+                    public void onClick(DialogInterface dialog, int which) {
+                        mNameEditText.setText(input.getText().toString());
+                        sDatabaseReference.child("Users").child(mUserID).child(NAME).setValue(input.getText().toString());
+                    }
+                });
+                mDialogName.setNegativeButton("Cancel", new DialogInterface.OnClickListener() {
+                    @Override
+                    public void onClick(DialogInterface dialog, int which) {
+                        dialog.cancel();
+                    }
+                });
+
+                mDialogName.show();
+            }
+        });
+
+        Button btn = (Button) findViewById(R.id.button_edit_status);
+        btn.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View view) {
+                final EditText input = new EditText(getBaseContext());
+                input.setInputType(InputType.TYPE_CLASS_TEXT);
+                mDialogStatus.setView(input);
+                mDialogStatus.setPositiveButton("OK", new DialogInterface.OnClickListener() {
+                    @Override
+                    public void onClick(DialogInterface dialog, int which) {
+                        mNameEditText.setText(input.getText().toString());
+                        sDatabaseReference.child("Users").child(mUserID).child(STATUS).setValue(input.getText().toString());
+                    }
+                });
+                mDialogStatus.setNegativeButton("Cancel", new DialogInterface.OnClickListener() {
+                    @Override
+                    public void onClick(DialogInterface dialog, int which) {
+                        dialog.cancel();
+                    }
+                });
+                mDialogStatus.show();
+            }
+        });
+
         mProfileRef = mStorageRef.child("images/profiles/" + mUserID + ".jpg");
         mUploadButton.setOnClickListener(new View.OnClickListener() {
             @Override
@@ -88,8 +135,17 @@ public class UserProfileActivity extends AppCompatActivity {
             }
         });
 
-        mUserPhoto = findViewById(R.id.user_photo);
+        mUserPhoto = (CircleImageView)findViewById(R.id.profile_photo);
         displayData();
+    }
+
+    public void createDialogs(){
+        mDialogName = new AlertDialog.Builder(this);
+        mDialogName.setTitle("Enter your name");
+
+        mDialogStatus = new AlertDialog.Builder(this);
+        mDialogStatus.setTitle("Enter your status");
+
     }
 
     private void displayStateValue() {
@@ -104,13 +160,12 @@ public class UserProfileActivity extends AppCompatActivity {
             @Override
             public void onDataChange(@NonNull DataSnapshot dataSnapshot) {
 
-                String name = (String) dataSnapshot.child("name").getValue();
-                String status = (String) dataSnapshot.child("status").getValue();
-                String uri = (String) dataSnapshot.child("imageUri").getValue();
+                String name = (String) dataSnapshot.child(NAME).getValue();
+                String status = (String) dataSnapshot.child(STATUS).getValue();
+                String uri = (String) dataSnapshot.child(IMAGE_URI).getValue();
                 mNameEditText.setText(name);
                 mStatusEditText.setText(status);
-                RequestOptions requestOptions = new RequestOptions().override(1000,500);
-                Glide.with(getBaseContext()).load(uri).apply(requestOptions).into(mUserPhoto);
+                Glide.with(getBaseContext()).load(uri).into(mUserPhoto);
             }
 
             @Override
@@ -119,7 +174,7 @@ public class UserProfileActivity extends AppCompatActivity {
             }
         };
 
-        sDatabaseReference.child("Users").child(mUserID).addListenerForSingleValueEvent(valueEventListener);
+        sDatabaseReference.child("Users").child(mUserID).addValueEventListener(valueEventListener);
 
     }
 
@@ -222,7 +277,6 @@ public class UserProfileActivity extends AppCompatActivity {
             try {
                 bitmap = MediaStore.Images.Media.getBitmap(this.getContentResolver(), selectedImage);
                 Bitmap photoBit = (Bitmap.createScaledBitmap(bitmap, 800, 500, false));
-                mUserPhoto.setImageBitmap(photoBit);
                 Intent intent = new Intent(this, UploadPhotoService.class);
                 intent.putExtra(UploadPhotoService.IMAGE_REG, selectedImage.toString());
                 intent.putExtra(UploadPhotoService.USER_ID, mUserID);
