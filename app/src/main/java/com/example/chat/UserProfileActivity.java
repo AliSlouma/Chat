@@ -71,7 +71,7 @@ public class UserProfileActivity extends AppCompatActivity {
         mReference = FirebaseDatabase.getInstance().getReference();
         mNameEditText = (TextView) findViewById(R.id.user_name);
         mStatusEditText = (TextView) findViewById(R.id.user_status);
-        mPhotoImageView = (ImageView) findViewById(R.id.profile_photo);
+        mPhotoImageView = (ImageView) findViewById(R.id.receiver_chat_photo);
         mUploadButton = (Button) findViewById(R.id.action_upload_photo);
         mFirebaseStorage = FirebaseStorage.getInstance();
         mStorageRef = mFirebaseStorage.getReferenceFromUrl("gs://chat-d4365.appspot.com");
@@ -135,7 +135,7 @@ public class UserProfileActivity extends AppCompatActivity {
             }
         });
 
-        mUserPhoto = (CircleImageView)findViewById(R.id.profile_photo);
+        mUserPhoto = (CircleImageView)findViewById(R.id.receiver_chat_photo);
         displayData();
     }
 

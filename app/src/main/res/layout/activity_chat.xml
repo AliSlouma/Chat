@@ -10,28 +10,40 @@
     <LinearLayout
         android:id="@+id/linearLayout"
         android:layout_width="0dp"
-        android:layout_height="60dp"
+        android:layout_height="55dp"
         android:orientation="horizontal"
         app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent">
+        <ImageView
+            android:background="@drawable/galary"
+            android:id="@+id/galary"
+            android:layout_width="30dp"
+            android:layout_height="53dp"
+            android:layout_marginBottom="10dp"
+            android:layout_weight="1"
 
+           />
         <EditText
             android:id="@+id/sendMessageEditView"
             android:layout_width="312dp"
-            android:layout_height="60dp"
+            android:layout_height="50dp"
             android:layout_weight="1"
             android:ems="10"
             android:hint="Send a message"
-            android:inputType="textPersonName" />
+            android:background="@drawable/edit_text_shape"
+            android:inputType="textMultiLine" />
 
-        <Button
+        <ImageView
+            android:background="@drawable/sendbutton"
             android:id="@+id/sendButton"
-            android:layout_width="wrap_content"
-            android:layout_height="60dp"
+            android:clickable="true"
+            android:layout_width="30dp"
+            android:layout_height="50dp"
             android:layout_weight="1"
             android:onClick="sendButton"
-            android:text="send" />
+             />
+
     </LinearLayout>
 
     <androidx.recyclerview.widget.RecyclerView

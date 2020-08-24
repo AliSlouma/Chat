@@ -3,33 +3,70 @@
     xmlns:app="http://schemas.android.com/apk/res-auto"
     xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
-    android:layout_height="wrap_content"
-    android:background="#AFBAF6">
+    android:layout_height="wrap_content">
 
-    <TextView
-        android:id="@+id/receiverMessage"
-        android:layout_width="wrap_content"
-        android:layout_height="0dp"
-        android:background="@drawable/reciever_cutsom_chat"
-        android:padding="5dp"
-        android:text="Receiver Message"
-        android:layout_margin="5dp"
-        android:textColor="#020101"
-        android:textSize="20sp"
+    <de.hdodenhof.circleimageview.CircleImageView
+        android:id="@+id/receiver_chat_photo"
+        android:layout_width="40dp"
+        android:layout_height="40dp"
+        android:layout_margin="7dp"
+        android:layout_marginTop="5dp"
+        app:civ_border_color="#FF000000"
+        app:civ_border_width="2dp"
         app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toTopOf="parent" />
+        app:layout_constraintTop_toTopOf="parent"
+        tools:ignore="MissingClass" />
 
     <TextView
         android:id="@+id/senderMessage"
-        android:layout_width="0dp"
+        android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:background="@drawable/sender_custom_chat"
-        android:padding="5dp"
-        android:layout_margin="5dp"
+        android:layout_margin="7dp"
 
+        android:background="@drawable/sender_custom_chat"
+        android:maxWidth="250dp"
+        android:padding="8dp"
         android:text="Sender Message"
         android:textColor="#FFFFFF"
         android:textSize="20sp"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintTop_toTopOf="parent" />
+
+    <TextView
+        android:id="@+id/receiverMessage"
+        android:layout_width="wrap_content"
+        android:layout_height="0dp"
+        android:layout_margin="7dp"
+
+        android:layout_marginTop="4dp"
+        android:background="@drawable/reciever_cutsom_chat"
+        android:maxWidth="250dp"
+        android:padding="8dp"
+        android:text="Receiver Message "
+        android:textColor="#000000"
+        android:textSize="20sp"
+
+        app:layout_constraintStart_toEndOf="@+id/receiver_chat_photo"
+        app:layout_constraintTop_toTopOf="parent" />
+
+    <ImageView
+        android:id="@+id/receiverSendedPhoto"
+        android:layout_width="250dp"
+        android:layout_height="250dp"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toTopOf="parent"
+        tools:srcCompat="@tools:sample/avatars"
+        android:layout_margin="7dp"
+        />
+
+    <ImageView
+        android:id="@+id/senderSendedPhoto"
+        android:layout_width="250dp"
+        android:layout_height="250dp"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintTop_toTopOf="parent"
+        tools:srcCompat="@tools:sample/avatars"
+        android:layout_margin="7dp"
+        />
+
 </androidx.constraintlayout.widget.ConstraintLayout>

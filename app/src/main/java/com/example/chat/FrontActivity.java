@@ -131,7 +131,7 @@ public class FrontActivity extends AppCompatActivity
        // nameKeysMap =null;
         nameKeysMap = new HashMap<>();
         mChats = new ArrayList<>();
-      //  setChatAdapter();
+       // setChatAdapter();
        initializeFriendsRecyclerAdapter();
        showFriends();
        // arrayAdapterFunc();
@@ -216,9 +216,9 @@ public class FrontActivity extends AppCompatActivity
             }
         };
         showChats();
-        initializeFriendsAdapter();
-        initializeProfileAdapter();
-        initializeRequestsAdapter();
+//        initializeFriendsAdapter();
+//        initializeProfileAdapter();
+//        initializeRequestsAdapter();
     }
 
 

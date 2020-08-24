@@ -52,7 +52,7 @@ public class FriendsRecyclerAdapter extends RecyclerView.Adapter<FriendsRecycler
             super(itemView);
             name = itemView.findViewById(R.id.profile_name);
             status = itemView.findViewById(R.id.profile_status);
-            image = itemView.findViewById(R.id.profile_photo);
+            image = itemView.findViewById(R.id.receiver_chat_photo);
             itemView.setOnClickListener(new View.OnClickListener() {
                 @Override
                 public void onClick(View view) {

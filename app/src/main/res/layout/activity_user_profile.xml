@@ -18,7 +18,7 @@
         app:layout_constraintTop_toTopOf="@+id/user_status" />
 
     <de.hdodenhof.circleimageview.CircleImageView
-        android:id="@+id/profile_photo"
+        android:id="@+id/receiver_chat_photo"
         android:layout_width="150dp"
         android:layout_height="200dp"
         android:layout_marginStart="20dp"
@@ -50,7 +50,7 @@
         android:textSize="24sp"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toBottomOf="@+id/profile_photo" />
+        app:layout_constraintTop_toBottomOf="@+id/receiver_chat_photo" />
 
     <TextView
         android:id="@+id/user_status"
@@ -69,6 +69,6 @@
         android:layout_height="30dp"
         android:layout_marginBottom="10dp"
         android:background="@drawable/ic_baseline_add_photo_alternate_24"
-        app:layout_constraintBottom_toBottomOf="@+id/profile_photo"
-        app:layout_constraintEnd_toEndOf="@+id/profile_photo" />
+        app:layout_constraintBottom_toBottomOf="@+id/receiver_chat_photo"
+        app:layout_constraintEnd_toEndOf="@+id/receiver_chat_photo" />
 </androidx.constraintlayout.widget.ConstraintLayout>

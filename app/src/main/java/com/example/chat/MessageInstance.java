@@ -6,20 +6,46 @@ public class MessageInstance {
     private String mDate;
     private boolean mSeen;
     private String mSender;
-
-
-
+    private String mReceiverPhoto;
     private String mSenderID;
-
-    public MessageInstance(String mMessage, String mTime, String mDate, boolean mSeen, String mSender, String mSenderID) {
+    private String mType;
+    private String mChatPhoto;
+    public MessageInstance(String mMessage, String mTime, String mDate, boolean mSeen, String mSender,
+                           String mReceiverPhoto, String mSenderID , String mType, String mChatPhoto) {
         this.mMessage = mMessage;
         this.mTime = mTime;
         this.mDate = mDate;
         this.mSeen = mSeen;
         this.mSender = mSender;
+        this.mReceiverPhoto = mReceiverPhoto;
         this.mSenderID = mSenderID;
+        this.mType = mType;
+        this.mChatPhoto = mChatPhoto;
     }
 
+    public String getmChatPhoto() {
+        return mChatPhoto;
+    }
+
+    public void setmChatPhoto(String mChatPhoto) {
+        this.mChatPhoto = mChatPhoto;
+    }
+
+    public String getmType() {
+        return mType;
+    }
+
+    public void setmType(String mType) {
+        this.mType = mType;
+    }
+
+    public String getmReceiverPhoto() {
+        return mReceiverPhoto;
+    }
+
+    public void setmReceiverPhoto(String mReceiverPhoto) {
+        this.mReceiverPhoto = mReceiverPhoto;
+    }
 
 
     public MessageInstance() {
