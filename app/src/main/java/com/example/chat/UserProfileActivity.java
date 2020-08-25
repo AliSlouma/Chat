@@ -63,6 +63,10 @@ public class UserProfileActivity extends AppCompatActivity {
     private Uri mDownloadUri;
     private AlertDialog.Builder mDialogName;
     private AlertDialog.Builder mDialogStatus;
+    private String mState;
+    private String mName;
+    private String mStatus;
+    private String mUri;
 
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -75,8 +79,8 @@ public class UserProfileActivity extends AppCompatActivity {
         mUploadButton = (Button) findViewById(R.id.action_upload_photo);
         mFirebaseStorage = FirebaseStorage.getInstance();
         mStorageRef = mFirebaseStorage.getReferenceFromUrl("gs://chat-d4365.appspot.com");
-        displayStateValue();
 
+        displayStateValue();
         createDialogs();
         Button button = (Button) findViewById(R.id.button_edit_name);
         button.setOnClickListener(new View.OnClickListener() {
@@ -160,12 +164,12 @@ public class UserProfileActivity extends AppCompatActivity {
             @Override
             public void onDataChange(@NonNull DataSnapshot dataSnapshot) {
 
-                String name = (String) dataSnapshot.child(NAME).getValue();
-                String status = (String) dataSnapshot.child(STATUS).getValue();
-                String uri = (String) dataSnapshot.child(IMAGE_URI).getValue();
-                mNameEditText.setText(name);
-                mStatusEditText.setText(status);
-                Glide.with(getBaseContext()).load(uri).into(mUserPhoto);
+                mName = (String) dataSnapshot.child(NAME).getValue();
+                mStatus = (String) dataSnapshot.child(STATUS).getValue();
+                mUri = (String) dataSnapshot.child(IMAGE_URI).getValue();
+                mNameEditText.setText(mName);
+                mStatusEditText.setText(mStatus);
+                Glide.with(getBaseContext()).load(mUri).into(mUserPhoto);
             }
 
             @Override
@@ -184,67 +188,119 @@ public class UserProfileActivity extends AppCompatActivity {
         MenuInflater menuInflater = getMenuInflater();
         menuInflater.inflate(R.menu.profile_menu, menu);
         Intent intent = getIntent();
-        switch (intent.getStringExtra(FrontActivity.STATE)) {
+        mState = intent.getStringExtra(FrontActivity.STATE);
+        switch (mState) {
             case FrontActivity.FRIENDS_ID:
                 changeFriendsState(menu);
+                displayData();
                 break;
             case FrontActivity.REQUEST_ID:
                 changeRequestState(menu);
+                displayData();
                 break;
             case FrontActivity.PENDING_ID:
                 changePendingState(menu);
+                displayData();
                 break;
             case FrontActivity.NOT_FRIENDS_ID:
                 changeNotFriendsState(menu);
+                displayData();
                 break;
             case FrontActivity.USER_PROFILE_ID:
                 changeUserState(menu);
+                displayData();
+                break;
+            case FrontActivity.BLOCKED_ID:
+                disableAll(menu);
+                mNameEditText.setText("User is blocking you ;(");
+                break;
+            case FrontActivity.BLOCKING_ID:
+                changeBlockingState(menu);
+                break;
         }
         return super.onCreateOptionsMenu(menu);
     }
 
+    private void changeBlockingState(Menu menu) {
+        disableAll(menu);
+        displayData();
+        menu.findItem(R.id.action_unblock).setVisible(true);
+    }
+
     private void changeUserState(Menu menu) {
-        disableAll(menu, R.id.action_pending, R.id.action_send_message, R.id.action_add_friend, R.id.action_accept_request);
+        disableAll(menu);
+    }
+
+    private void disableAll(Menu menu) {
+        disable(menu,R.id.action_send_message);
+        disable(menu,R.id.action_unfriend);
+        disable(menu,R.id.action_pending);
+        disable(menu,R.id.action_add_friend);
+        disable(menu,R.id.action_block);
+        disable(menu,R.id.action_accept_request);
+        disable(menu,R.id.action_reject);
+        disable(menu,R.id.action_unblock);
     }
 
     private void changeRequestState(Menu menu) {
-        changeState(menu, R.id.action_pending, R.id.action_send_message, R.id.action_add_friend, R.id.action_accept_request);
+        disable(menu,R.id.action_send_message);
+        disable(menu,R.id.action_unfriend);
+        disable(menu,R.id.action_pending);
+        disable(menu,R.id.action_add_friend);
+        disable(menu,R.id.action_unblock);
+        enable(menu,R.id.action_block);
+        enable(menu,R.id.action_accept_request);
+        enable(menu,R.id.action_reject);
     }
 
     private void changeNotFriendsState(Menu menu) {
-        changeState(menu, R.id.action_pending, R.id.action_send_message, R.id.action_accept_request, R.id.action_add_friend);
+        disable(menu,R.id.action_unblock);
+        disable(menu,R.id.action_accept_request);
+        disable(menu,R.id.action_reject);
+        disable(menu,R.id.action_send_message);
+        disable(menu,R.id.action_unfriend);
+        disable(menu,R.id.action_pending);
+        enable(menu,R.id.action_add_friend);
+        enable(menu,R.id.action_block);
     }
 
     private void changePendingState(Menu menu) {
-        changeState(menu, R.id.action_add_friend, R.id.action_send_message, R.id.action_accept_request, R.id.action_pending);
+        disable(menu,R.id.action_unblock);
+        disable(menu,R.id.action_add_friend);
+        disable(menu,R.id.action_accept_request);
+        disable(menu,R.id.action_reject);
+        disable(menu,R.id.action_send_message);
+        disable(menu,R.id.action_unfriend);
+        enable(menu,R.id.action_pending);
+        enable(menu,R.id.action_block);
     }
 
     private void changeFriendsState(Menu menu) {
-        changeState(menu, R.id.action_add_friend, R.id.action_accept_request, R.id.action_pending, R.id.action_send_message);
+        disable(menu,R.id.action_unblock);
+       disable(menu,R.id.action_add_friend);
+       disable(menu,R.id.action_accept_request);
+       disable(menu,R.id.action_pending);
+       disable(menu,R.id.action_reject);
+       enable(menu,R.id.action_send_message);
+       enable(menu,R.id.action_unfriend);
+       enable(menu,R.id.action_block);
     }
 
-    private void changeState(Menu menu, int p, int p2, int p3, int p4) {
+    private void disable(Menu menu, int p ){
         menu.findItem(p).setVisible(false);
-        menu.findItem(p2).setVisible(false);
-        menu.findItem(p3).setVisible(false);
-        menu.findItem(p4).setVisible(true);
-        mUploadButton.setVisibility(Button.INVISIBLE);
     }
 
-    private void disableAll(Menu menu, int p, int p2, int p3, int p4) {
-        menu.findItem(p).setVisible(false);
-        menu.findItem(p2).setVisible(false);
-        menu.findItem(p3).setVisible(false);
-        menu.findItem(p4).setVisible(false);
-        mUploadButton.setVisibility(Button.VISIBLE);
+    private void enable(Menu menu , int p){
+        menu.findItem(p).setVisible(true);
     }
+
 
     @Override
     public boolean onOptionsItemSelected(@NonNull MenuItem item) {
         int id = item.getItemId();
 
         if (id == R.id.action_add_friend) {
-            mReference.child(FrontActivity.PATH_REQUESTS).child(mUserID).child(sFirebaseAuth.getUid()).setValue("");
+            mReference.child(FrontActivity.PATH_REQUESTS).child(mUserID).child(sFirebaseAuth.getUid()).setValue(FrontActivity.mMyUSer.getName());
             changePendingState(mBaseMenu);
         }
         if (id == R.id.action_send_message) {
@@ -253,16 +309,51 @@ public class UserProfileActivity extends AppCompatActivity {
             startActivity(intent);
         }
         if (id == R.id.action_accept_request) {
-            mReference.child(FrontActivity.PATH_FRIENDS).child(mUserID).child(mFirebaseAuth.getUid()).setValue("");
-            mReference.child(FrontActivity.PATH_FRIENDS).child(mFirebaseAuth.getUid()).child(mUserID).setValue("");
-            mReference.child(FrontActivity.PATH_REQUESTS).child(mFirebaseAuth.getUid()).child(mUserID).setValue("done");
+            mReference.child(FrontActivity.PATH_FRIENDS).child(mUserID).child(mFirebaseAuth.getUid()).setValue(FrontActivity.mMyUSer.getName());
+            mReference.child(FrontActivity.PATH_FRIENDS).child(mFirebaseAuth.getUid()).child(mUserID).setValue(mName);
+            mReference.child(FrontActivity.PATH_REQUESTS).child(mFirebaseAuth.getUid()).child(mUserID).removeValue();
             changeFriendsState(mBaseMenu);
         }
+        if(id == R.id.action_reject){
+            rejectRequest();
+        }
         if (id == R.id.action_pending) {
-            sDatabaseReference.child(FrontActivity.PATH_REQUESTS).child(mUserID).child(sFirebaseAuth.getUid()).setValue("done");
+            removeRequest();
+            changeNotFriendsState(mBaseMenu);
+        }
+        if(id == R.id.action_block){
+            sDatabaseReference.child(FrontActivity.BLOCKED_USERS).child(sFirebaseAuth.getUid()).child(mUserID).setValue(mName);
+            if(mState.equals(FrontActivity.FRIENDS_ID)){
+                unFriend();
+            } else if (mState.equals(FrontActivity.PENDING_ID)) {
+                removeRequest();
+            }else if(mState.equals(FrontActivity.REQUEST_ID)){
+                rejectRequest();
+            }
+            changeBlockingState(mBaseMenu);
+        }
+        if(id == R.id.action_unblock){
+            sDatabaseReference.child(FrontActivity.BLOCKED_USERS).child(sFirebaseAuth.getUid()).child(mUserID).removeValue();
+            changeNotFriendsState(mBaseMenu);
+        }
+        if(id == R.id.action_unfriend){
+            unFriend();
             changeNotFriendsState(mBaseMenu);
         }
         return true;
+    }
+
+    private void rejectRequest() {
+        mReference.child(FrontActivity.PATH_REQUESTS).child(mFirebaseAuth.getUid()).child(mUserID).removeValue();
+    }
+
+    private void removeRequest() {
+        sDatabaseReference.child(FrontActivity.PATH_REQUESTS).child(mUserID).child(sFirebaseAuth.getUid()).removeValue();
+    }
+
+    private void unFriend() {
+        mReference.child(FrontActivity.PATH_FRIENDS).child(mUserID).child(mFirebaseAuth.getUid()).removeValue();
+        mReference.child(FrontActivity.PATH_FRIENDS).child(mFirebaseAuth.getUid()).child(mUserID).removeValue();
     }
 
     @Override

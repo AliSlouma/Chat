@@ -9,11 +9,34 @@
         app:showAsAction="ifRoom|withText" />
     <item
         android:id="@+id/action_accept_request"
-        android:title="Accept request" />
+        android:icon="@drawable/ic_baseline_check_24"
+        android:title="Accept"
+        app:showAsAction="ifRoom|withText" />
+    <item
+        android:id="@+id/action_reject"
+        android:icon="@drawable/ic_baseline_close_24"
+        android:title="Reject"
+        app:showAsAction="ifRoom|withText" />
     <item
         android:id="@+id/action_send_message"
-        android:title="Message" />
+        android:icon="@drawable/ic_baseline_message_24"
+        android:title="Message"
+        app:showAsAction="ifRoom|withText" />
     <item
         android:id="@+id/action_pending"
-        android:title="Pending" />
+        android:title="Cancel Request"
+        app:showAsAction="always|withText" />
+    <item
+        android:id="@+id/action_unfriend"
+        android:icon="@drawable/ic_baseline_delete_24"
+        android:title="Unfriend"
+        app:showAsAction="ifRoom|withText" />
+    <item
+        android:id="@+id/action_block"
+        android:title="Block"
+        app:showAsAction="ifRoom|withText" />
+    <item
+        android:id="@+id/action_unblock"
+        android:title="Unblock"
+        app:showAsAction="always|withText" />
 </menu>

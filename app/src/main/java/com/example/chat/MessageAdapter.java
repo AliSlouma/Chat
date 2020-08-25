@@ -53,9 +53,6 @@ public class MessageAdapter extends RecyclerView.Adapter<MessageAdapter.MessageV
         View view = LayoutInflater.from(parent.getContext()).inflate(R.layout.custom_chat_view,parent,false);
 
         mFirebaseAuth = FirebaseAuth.getInstance();
-
-
-
         return new MessageViewHolder(view);
 
     }
@@ -94,7 +91,7 @@ public class MessageAdapter extends RecyclerView.Adapter<MessageAdapter.MessageV
 
                 Glide.with(context)
                         .setDefaultRequestOptions(requestOptions)
-                        .load(messageInstance.getmChatPhoto()).into(holder.receiverPhoto);
+                        .load(messageInstance.getmChatPhoto()).into(holder.receiverSendedphoto);
                 holder.receiverSendedphoto.setVisibility(View.VISIBLE);
             }
 

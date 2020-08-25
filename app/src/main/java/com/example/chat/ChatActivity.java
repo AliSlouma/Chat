@@ -137,35 +137,6 @@ public class ChatActivity extends AppCompatActivity {
     @Override
     protected void onStart() {
         super.onStart();
-        messageKeyRef.addChildEventListener(new ChildEventListener() {
-            @Override
-            public void onChildAdded(@NonNull DataSnapshot dataSnapshot, @Nullable String s) {
-                messageInstanceList.add(dataSnapshot.getValue(MessageInstance.class));
-                Log.i("hi" ,"11111111111111");
-                messageAdapter.notifyDataSetChanged();
-                chatRecyclerView.smoothScrollToPosition(chatRecyclerView.getAdapter().getItemCount());
-            }
-
-            @Override
-            public void onChildChanged(@NonNull DataSnapshot dataSnapshot, @Nullable String s) {
-
-            }
-
-            @Override
-            public void onChildRemoved(@NonNull DataSnapshot dataSnapshot) {
-
-            }
-
-            @Override
-            public void onChildMoved(@NonNull DataSnapshot dataSnapshot, @Nullable String s) {
-
-            }
-
-            @Override
-            public void onCancelled(@NonNull DatabaseError databaseError) {
-
-            }
-        });
     }
 
 
@@ -212,7 +183,35 @@ public class ChatActivity extends AppCompatActivity {
             }
         });
 
+        messageKeyRef.addChildEventListener(new ChildEventListener() {
+            @Override
+            public void onChildAdded(@NonNull DataSnapshot dataSnapshot, @Nullable String s) {
+                messageInstanceList.add(dataSnapshot.getValue(MessageInstance.class));
+                Log.i("hi" ,"11111111111111");
+                messageAdapter.notifyDataSetChanged();
+                chatRecyclerView.smoothScrollToPosition(chatRecyclerView.getAdapter().getItemCount());
+            }
 
+            @Override
+            public void onChildChanged(@NonNull DataSnapshot dataSnapshot, @Nullable String s) {
+
+            }
+
+            @Override
+            public void onChildRemoved(@NonNull DataSnapshot dataSnapshot) {
+
+            }
+
+            @Override
+            public void onChildMoved(@NonNull DataSnapshot dataSnapshot, @Nullable String s) {
+
+            }
+
+            @Override
+            public void onCancelled(@NonNull DatabaseError databaseError) {
+
+            }
+        });
     }
 
     private void getReceiverPhoto() {

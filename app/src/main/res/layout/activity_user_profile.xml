@@ -21,10 +21,10 @@
         android:id="@+id/receiver_chat_photo"
         android:layout_width="150dp"
         android:layout_height="200dp"
-        android:layout_marginStart="20dp"
         android:layout_marginTop="20dp"
         app:civ_border_color="#FF000000"
         app:civ_border_width="2dp"
+        app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toTopOf="parent" />
 

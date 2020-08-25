@@ -2,6 +2,8 @@ package com.example.chat;
 
 import android.content.Intent;
 import android.os.Bundle;
+import android.text.Editable;
+import android.text.TextWatcher;
 import android.view.MenuItem;
 import android.view.View;
 import android.view.Menu;
@@ -10,11 +12,13 @@ import android.widget.ArrayAdapter;
 import android.widget.Button;
 import android.widget.EditText;
 import android.widget.ListView;
+import android.widget.ProgressBar;
 import android.widget.TextView;
 
 
 import com.google.android.material.navigation.NavigationView;
 import com.google.firebase.auth.FirebaseAuth;
+import com.google.firebase.database.ChildEventListener;
 import com.google.firebase.database.DataSnapshot;
 import com.google.firebase.database.DatabaseError;
 import com.google.firebase.database.DatabaseReference;
@@ -22,6 +26,7 @@ import com.google.firebase.database.FirebaseDatabase;
 import com.google.firebase.database.ValueEventListener;
 
 import androidx.annotation.NonNull;
+import androidx.annotation.Nullable;
 import androidx.appcompat.app.ActionBarDrawerToggle;
 import androidx.core.view.GravityCompat;
 import androidx.drawerlayout.widget.DrawerLayout;
@@ -44,9 +49,14 @@ public class FrontActivity extends AppCompatActivity
     public static final String NOT_FRIENDS_ID = "com.example.chat.notFriends";
     public static final String PENDING_ID = "com.example.chat.pending";
     public static final String USER_PROFILE_ID = "com.example.chat.profileId";
+    public static final String BLOCKED_ID = "com.example.chat.blockedId";
+    public static final String BLOCKING_ID = "com.example.chat.blockingId";
     public static final String STATE = "state";
     public static final String PATH_FRIENDS = "friends";
     public static final String PATH_REQUESTS = "FriendRequests";
+    public static final String BLOCKED_USERS = "Blocked users";
+    private static final int CHECKS = 6;
+    private static final String NAMES = "Names";
     private int cnt = 0;
 
     FirebaseAuth mFirebaseAuth;
@@ -67,7 +77,7 @@ public class FrontActivity extends AppCompatActivity
     private AdapterView.OnItemClickListener mProfilesListener;
     private DatabaseReference root;
     public static UserInstance mMyUSer;
-    private List<UserInstance> mFriends;
+    private List<String> mFriends;
     private List<UserInstance> mRequest;
     private ArrayAdapter mRequestAdapter;
     private AdapterView.OnItemClickListener mRequestsListener;
@@ -80,6 +90,12 @@ public class FrontActivity extends AppCompatActivity
     private FriendsRecyclerAdapter mFriendsRecyclerAdapter;
     private RecyclerView mFront_list;
     private LinearLayoutManager mFriendsLayoutManager;
+    private List<String> mRequests;
+    private RequestsRecyclerAdapter mRequestsRecyclerAdapter;
+    private LinearLayoutManager mRequestsManager;
+    private ProgressBar mProgressBar;
+    private List<String> mTempFriends;
+
     // private AppBarConfiguration mAppBarConfiguration;
 
     @Override
@@ -108,19 +124,26 @@ public class FrontActivity extends AppCompatActivity
         //mDatabaseReference.child("Users").child(mFirebaseAuth.getUid()).child("friends").setValue("");
         // FriendsHandler friendsHandler = new FriendsHandler(this);
         // friendsHandler.addFriendsHandler(mFirebaseAuth.getUid());
-        mDatabaseReference.child(PATH_REQUESTS).child(mFirebaseAuth.getUid()).child(mFirebaseAuth.getUid())
-                .setValue("");
-        mDatabaseReference.child(PATH_FRIENDS).child(mFirebaseAuth.getUid()).child(mFirebaseAuth.getUid())
-                .setValue("");
+      //  mDatabaseReference.child(PATH_FRIENDS).child(mFirebaseAuth.getUid()).child(mFirebaseAuth.getUid())
+              //  .setValue();
 
+      //  mDatabaseReference.child(PATH_FRIENDS).child(mFirebaseAuth.getUid()).child("zKAvAikUxUToVLGSbSD37jpRTj12")
+              //  .setValue("");
 
-        mSearchButton = (Button) findViewById(R.id.button_search);
-        mSearchEditText = (EditText) findViewById(R.id.target_of_search);
         root = mDatabaseReference.child("Users");
         root.child(mFirebaseAuth.getUid()).addListenerForSingleValueEvent(new ValueEventListener() {
             @Override
             public void onDataChange(@NonNull DataSnapshot dataSnapshot) {
                 mMyUSer = dataSnapshot.getValue(UserInstance.class);
+                mDatabaseReference.child(NAMES).child(mMyUSer.getName())
+                        .setValue(mFirebaseAuth.getUid());
+                mDatabaseReference.child(NAMES).child("lol")
+                        .setValue("zKAvAikUxUToVLGSbSD37jpRTj12");
+
+                mDatabaseReference.child(PATH_FRIENDS).child(mFirebaseAuth.getUid()).child(mFirebaseAuth.getUid())
+                        .setValue(mMyUSer.getName());
+                mDatabaseReference.child(PATH_FRIENDS).child(mFirebaseAuth.getUid()).child("zKAvAikUxUToVLGSbSD37jpRTj12")
+                        .setValue("lol");
             }
 
             @Override
@@ -128,13 +151,84 @@ public class FrontActivity extends AppCompatActivity
 
             }
         });
+
+        mProgressBar = (ProgressBar) findViewById(R.id.front_progress_bar);
+    //    mSearchButton = (Button) findViewById(R.id.button_search);
+        mSearchEditText = (EditText) findViewById(R.id.target_of_search);
+        mSearchEditText.addTextChangedListener(new TextWatcher() {
+            @Override
+            public void beforeTextChanged(CharSequence charSequence, int i, int i1, int i2) {
+
+            }
+
+            @Override
+            public void onTextChanged(CharSequence charSequence, int i, int i1, int i2) {
+
+            }
+
+            @Override
+            public void afterTextChanged(Editable editable) {
+                String s = editable.toString();
+                if(s.equals("")){
+                    mFriendsRecyclerAdapter.mFriends = mFriends;
+                    mFriendsRecyclerAdapter.notifyDataSetChanged();
+                }else {
+                    mTempFriends = new ArrayList<>();
+                    mFriendsRecyclerAdapter.mFriends = mTempFriends;
+                    mFriendsRecyclerAdapter.notifyDataSetChanged();
+                    filterByName(s);
+                }
+            }
+        });
+
        // nameKeysMap =null;
         nameKeysMap = new HashMap<>();
         mChats = new ArrayList<>();
        // setChatAdapter();
-       initializeFriendsRecyclerAdapter();
+       initializeFriendsAdapter();
        showFriends();
-       // arrayAdapterFunc();
+       initializeRequestsAdapter();
+    }
+
+    private void filterByName(final String name){
+        mDatabaseReference.child(PATH_FRIENDS).child(mFirebaseAuth.getUid()).addListenerForSingleValueEvent(new ValueEventListener() {
+            @Override
+            public void onDataChange(@NonNull DataSnapshot dataSnapshot) {
+                Iterator iterator = dataSnapshot.getChildren().iterator();
+                while (iterator.hasNext()){
+                    DataSnapshot dataSnapshot1 = (DataSnapshot)iterator.next();
+                    if(((String)dataSnapshot1.getValue()).startsWith(name)) {
+                       mTempFriends.add(dataSnapshot1.getKey());
+                       mFriendsRecyclerAdapter.notifyDataSetChanged();
+                    }
+                }
+            }
+
+            @Override
+            public void onCancelled(@NonNull DatabaseError databaseError) {
+
+            }
+        });
+    }
+
+    private void filterFriendsByName(final String name){
+        mDatabaseReference.child(NAMES).addListenerForSingleValueEvent(new ValueEventListener() {
+            @Override
+            public void onDataChange(@NonNull DataSnapshot dataSnapshot) {
+                Iterator iterator = dataSnapshot.getChildren().iterator();
+                while (iterator.hasNext()){
+                    DataSnapshot dataSnapshot1 = (DataSnapshot)iterator.next();
+                    if(dataSnapshot1.getKey().startsWith(name)) {
+
+                    }
+                }
+            }
+
+            @Override
+            public void onCancelled(@NonNull DatabaseError databaseError) {
+
+            }
+        });
     }
 
     public boolean onCreateOptionsMenu(Menu menu) {
@@ -218,7 +312,7 @@ public class FrontActivity extends AppCompatActivity
         showChats();
 //        initializeFriendsAdapter();
 //        initializeProfileAdapter();
-//        initializeRequestsAdapter();
+        initializeRequestsAdapter();
     }
 
 
@@ -229,35 +323,54 @@ public class FrontActivity extends AppCompatActivity
         }
     }
 
-    private void initializeFriendsRecyclerAdapter(){
+
+
+
+    private void initializeFriendsAdapter(){
         mFriends = new ArrayList<>();
         mFriendsLayoutManager = new LinearLayoutManager(this);
         mFriendsRecyclerAdapter = new FriendsRecyclerAdapter(mFriends,this);
-        mDatabaseReference.child(PATH_FRIENDS).child(mFirebaseAuth.getUid()).addValueEventListener(new ValueEventListener() {
+        mDatabaseReference.child(PATH_FRIENDS).child(mFirebaseAuth.getUid()).addChildEventListener(new ChildEventListener() {
             @Override
-            public void onDataChange(@NonNull DataSnapshot dataSnapshot) {
-                mFriends.clear();
-                Iterable<DataSnapshot> iterable = dataSnapshot.getChildren();
-                Iterator<DataSnapshot> iterator = iterable.iterator();
-                while (iterator.hasNext()){
-                    DataSnapshot data = iterator.next();
-                    String id = data.getKey();
-                    root.child(id).addListenerForSingleValueEvent(new ValueEventListener() {
-                        @Override
-                        public void onDataChange(@NonNull DataSnapshot dataSnapshot) {
-                            mFriendsRecyclerAdapter.mFriends.add(dataSnapshot.getValue(UserInstance.class));
-                            mFriendsRecyclerAdapter.notifyDataSetChanged();
-                        }
+            public void onChildAdded(@NonNull DataSnapshot dataSnapshot, @Nullable String s) {
+                mProgressBar.setVisibility(View.VISIBLE);
+                String user_id = (String)dataSnapshot.getKey();
+                mFriends.add(user_id);
+                if(!mSearchEditText.getText().toString().equals(""))
+                    mTempFriends.add(user_id);
+                mFriendsRecyclerAdapter.notifyDataSetChanged();
+            }
 
-                        @Override
-                        public void onCancelled(@NonNull DatabaseError databaseError) {
 
-                        }
-                    });
-                }
+            @Override
+            public void onChildChanged(@NonNull DataSnapshot dataSnapshot, @Nullable String s) {
 
             }
 
+            @Override
+            public void onChildRemoved(@NonNull DataSnapshot dataSnapshot) {
+                final String user_id = (String) dataSnapshot.getKey();
+                mFriends.remove(user_id);
+                if(!mSearchEditText.getText().equals(""))
+                    mTempFriends.remove(user_id);
+                mFriendsRecyclerAdapter.notifyDataSetChanged();
+            }
+
+            @Override
+            public void onChildMoved(@NonNull DataSnapshot dataSnapshot, @Nullable String s) {
+
+            }
+
+            @Override
+            public void onCancelled(@NonNull DatabaseError databaseError) {
+
+            }
+        });
+        mDatabaseReference.child(PATH_FRIENDS).child(mFirebaseAuth.getUid()).addValueEventListener(new ValueEventListener() {
+            @Override
+            public void onDataChange(@NonNull DataSnapshot dataSnapshot) {
+                mProgressBar.setVisibility(View.GONE);
+            }
 
             @Override
             public void onCancelled(@NonNull DatabaseError databaseError) {
@@ -265,97 +378,47 @@ public class FrontActivity extends AppCompatActivity
             }
         });
     }
-
-    private void initializeFriendsAdapter(){
-
-        mFriends = new ArrayList<>();
-        mFriendsAdapter = new ArrayAdapter<>(getApplicationContext(),android.R.layout.simple_list_item_1 , mFriends);
-        mFriendsListner = new AdapterView.OnItemClickListener() {
-            @Override
-            public void onItemClick(AdapterView<?> adapterView, View view, int postion, long id) {
-                Intent intent = new Intent(getApplicationContext() , UserProfileActivity.class);
-                intent.putExtra(USER_ID, mFriends.get(postion).getUId());
-                intent.putExtra(STATE,FRIENDS_ID);
-                startActivity(intent);
-            }
-        };
-        mDatabaseReference.child(PATH_FRIENDS).child(mFirebaseAuth.getUid()).addValueEventListener(new ValueEventListener() {
-            @Override
-            public void onDataChange(@NonNull DataSnapshot dataSnapshot) {
-                mFriends.clear();
-                Iterable<DataSnapshot> iterable = dataSnapshot.getChildren();
-                Iterator<DataSnapshot> iterator = iterable.iterator();
-                while (iterator.hasNext()){
-                    DataSnapshot data = iterator.next();
-                    String id = data.getKey();
-                    root.child(id).addListenerForSingleValueEvent(new ValueEventListener() {
-                        @Override
-                        public void onDataChange(@NonNull DataSnapshot dataSnapshot) {
-                            mFriends.add(dataSnapshot.getValue(UserInstance.class));
-                            mFriendsAdapter.notifyDataSetChanged();
-                        }
-
-                        @Override
-                        public void onCancelled(@NonNull DatabaseError databaseError) {
-
-                        }
-                    });
-                }
-
-            }
-
-
-            @Override
-            public void onCancelled(@NonNull DatabaseError databaseError) {
-
-            }
-        });
-
-
-    }
-
 
     private void initializeRequestsAdapter(){
-        mRequest = new ArrayList<>();
-        mRequestAdapter = new ArrayAdapter<>(getApplicationContext(),android.R.layout.simple_list_item_1 , mRequest);
-        mRequestsListener = new AdapterView.OnItemClickListener() {
+        mRequests = new ArrayList<>();
+        mRequestsRecyclerAdapter = new RequestsRecyclerAdapter(mRequests,this);
+        mRequestsManager = new LinearLayoutManager(this);
+        mDatabaseReference.child(PATH_REQUESTS).child(mFirebaseAuth.getUid()).addChildEventListener(new ChildEventListener() {
             @Override
-            public void onItemClick(AdapterView<?> adapterView, View view, int postion, long id) {
-                Intent intent = new Intent(getApplicationContext() , UserProfileActivity.class);
-                intent.putExtra(USER_ID, mRequest.get(postion).getUId());
-                intent.putExtra(STATE,REQUEST_ID);
-                startActivity(intent);
+            public void onChildAdded(@NonNull DataSnapshot dataSnapshot, @Nullable String s) {
+                mProgressBar.setVisibility(View.VISIBLE);
+                String user_id = (String)dataSnapshot.getKey();
+                mRequests.add(user_id);
+                mRequestsRecyclerAdapter.notifyDataSetChanged();
             }
-        };
 
+
+            @Override
+            public void onChildChanged(@NonNull DataSnapshot dataSnapshot, @Nullable String s) {
+
+            }
+
+            @Override
+            public void onChildRemoved(@NonNull DataSnapshot dataSnapshot) {
+                final String user_id = (String) dataSnapshot.getKey();
+                mRequests.remove(user_id);
+                mRequestsRecyclerAdapter.notifyDataSetChanged();
+            }
+
+            @Override
+            public void onChildMoved(@NonNull DataSnapshot dataSnapshot, @Nullable String s) {
+
+            }
+
+            @Override
+            public void onCancelled(@NonNull DatabaseError databaseError) {
+
+            }
+        });
         mDatabaseReference.child(PATH_REQUESTS).child(mFirebaseAuth.getUid()).addValueEventListener(new ValueEventListener() {
             @Override
             public void onDataChange(@NonNull DataSnapshot dataSnapshot) {
-                mRequest.clear();
-                Iterable<DataSnapshot> iterable = dataSnapshot.getChildren();
-                Iterator<DataSnapshot> iterator = iterable.iterator();
-                while (iterator.hasNext()){
-                    DataSnapshot data = iterator.next();
-                    String id = data.getKey();
-                    if(data.getValue() != "done") {
-                        root.child(id).addListenerForSingleValueEvent(new ValueEventListener() {
-                            @Override
-                            public void onDataChange(@NonNull DataSnapshot dataSnapshot) {
-                                mRequest.add(dataSnapshot.getValue(UserInstance.class));
-                                mRequestAdapter.notifyDataSetChanged();
-                            }
-
-                            @Override
-                            public void onCancelled(@NonNull DatabaseError databaseError) {
-
-                            }
-                        });
-                    }else{
-                        mDatabaseReference.child("FriendRequests").child(mFirebaseAuth.getUid()).child(id).removeValue();
-                        mRequestAdapter.notifyDataSetChanged();
-                    }
-                }
-
+                mProgressBar.setVisibility(View.GONE);
             }
 
             @Override
@@ -386,7 +449,7 @@ public class FrontActivity extends AppCompatActivity
                 if(dataSnapshot.child(userId).exists())
                     mResult = FRIENDS_ID;
                 cnt++;
-                if(cnt == 4) {
+                if(cnt == CHECKS) {
                     intent.putExtra(STATE, mResult);
                     startActivity(intent);
                 }
@@ -405,7 +468,7 @@ public class FrontActivity extends AppCompatActivity
                 if(dataSnapshot.child(userId).exists())
                     mResult = REQUEST_ID;
                 cnt++;
-                if(cnt == 4) {
+                if(cnt == CHECKS) {
                     intent.putExtra(STATE, mResult);
                     startActivity(intent);
                 }
@@ -423,7 +486,7 @@ public class FrontActivity extends AppCompatActivity
                 if(dataSnapshot.child(mFirebaseAuth.getUid()).exists())
                     mResult = PENDING_ID;
                 cnt++;
-                if(cnt == 4) {
+                if(cnt == CHECKS) {
                     intent.putExtra(STATE, mResult);
                     startActivity(intent);
                 }
@@ -435,9 +498,49 @@ public class FrontActivity extends AppCompatActivity
             }
         });
 
+        mDatabaseReference.child(BLOCKED_USERS).child(mFirebaseAuth.getUid()).addListenerForSingleValueEvent(new ValueEventListener() {
+            @Override
+            public void onDataChange(@NonNull DataSnapshot dataSnapshot) {
+                if(dataSnapshot.child(userId).exists()) {
+                    mResult = BLOCKING_ID;
+                }
+                cnt++;
+                if(cnt == CHECKS) {
+                    intent.putExtra(STATE, mResult);
+                    startActivity(intent);
+                }
+            }
+
+            @Override
+            public void onCancelled(@NonNull DatabaseError databaseError) {
+
+            }
+        });
+
+        mDatabaseReference.child(BLOCKED_USERS).child(userId).addListenerForSingleValueEvent(new ValueEventListener() {
+            @Override
+            public void onDataChange(@NonNull DataSnapshot dataSnapshot) {
+                if(dataSnapshot.child(mFirebaseAuth.getUid()).exists()) {
+                    mResult = BLOCKED_ID;
+                }
+                cnt++;
+                if(cnt == CHECKS) {
+                    intent.putExtra(STATE, mResult);
+                    startActivity(intent);
+                }
+            }
+
+            @Override
+            public void onCancelled(@NonNull DatabaseError databaseError) {
+
+            }
+        });
+
+
+
         mResult = NOT_FRIENDS_ID;
         cnt++;
-        if(cnt == 4) {
+        if(cnt == CHECKS) {
             intent.putExtra(STATE, mResult);
             startActivity(intent);
         }
@@ -451,10 +554,12 @@ public class FrontActivity extends AppCompatActivity
             showChats();
         }else if(id == R.id.nav_friends){
             showFriends();
+            mSearchEditText.setVisibility(View.VISIBLE);
         }else if(id == R.id.nav_search_profiles){
              showProfiles();
          }else if(id == R.id.nav_requests){
               showRequests();
+              mSearchEditText.setVisibility(View.INVISIBLE);
       } else if(id == R.id.nav_profile){
             Intent intent = new Intent(this,UserProfileActivity.class);
             intent.putExtra(USER_ID,mFirebaseAuth.getUid());
@@ -480,9 +585,8 @@ public class FrontActivity extends AppCompatActivity
     }
     private void showRequests() {
 
-        listView.setAdapter(mRequestAdapter);
-       // mRequestAdapter.notifyDataSetChanged();
-        listView.setOnItemClickListener(mRequestsListener);
+       mFront_list.setLayoutManager(mRequestsManager);
+       mFront_list.setAdapter(mRequestsRecyclerAdapter);
 
     }
     private void showProfiles() {
