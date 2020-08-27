@@ -28,6 +28,7 @@ public class MyFirebaseMessagingService extends FirebaseMessagingService {
         super.onMessageReceived(remoteMessage);
         final Intent intent = new Intent(this, UserProfileActivity.class);
         intent.putExtra(FrontActivity.USER_ID,remoteMessage.getData().get(FrontActivity.USER_ID));
+        intent.putExtra(FrontActivity.STATE,FrontActivity.REQUEST_ID);
         NotificationManager notificationManager = (NotificationManager)getSystemService(Context.NOTIFICATION_SERVICE);
         int notificationID = new Random().nextInt(3000);
 
