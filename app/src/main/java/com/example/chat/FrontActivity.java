@@ -390,7 +390,7 @@ public class FrontActivity extends AppCompatActivity
             public void onChildRemoved(@NonNull DataSnapshot dataSnapshot) {
                 final String user_id = (String) dataSnapshot.getKey();
                 mFriends.remove(user_id);
-                if(!mSearchEditText.getText().equals(""))
+                if(!mSearchEditText.getText().toString().equals(""))
                     mTempFriends.remove(user_id);
                 mFriendsRecyclerAdapter.notifyDataSetChanged();
             }
