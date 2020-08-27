@@ -4,6 +4,7 @@ import android.content.Intent;
 import android.os.Bundle;
 import android.text.Editable;
 import android.text.TextWatcher;
+import android.util.Log;
 import android.view.MenuItem;
 import android.view.View;
 import android.view.Menu;
@@ -14,8 +15,14 @@ import android.widget.EditText;
 import android.widget.ListView;
 import android.widget.ProgressBar;
 import android.widget.TextView;
+import android.widget.Toast;
 
 
+import com.android.volley.AuthFailureError;
+import com.android.volley.Response;
+import com.android.volley.VolleyError;
+import com.google.android.gms.tasks.OnCompleteListener;
+import com.google.android.gms.tasks.Task;
 import com.google.android.material.navigation.NavigationView;
 import com.google.firebase.auth.FirebaseAuth;
 import com.google.firebase.database.ChildEventListener;
@@ -24,6 +31,9 @@ import com.google.firebase.database.DatabaseError;
 import com.google.firebase.database.DatabaseReference;
 import com.google.firebase.database.FirebaseDatabase;
 import com.google.firebase.database.ValueEventListener;
+import com.google.firebase.iid.FirebaseInstanceId;
+import com.google.firebase.iid.InstanceIdResult;
+import com.google.firebase.messaging.FirebaseMessaging;
 
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
@@ -35,10 +45,16 @@ import androidx.appcompat.widget.Toolbar;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 
+import org.json.JSONException;
+import org.json.JSONObject;
+
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
+import java.util.Map;
+
+import com.android.volley.toolbox.JsonObjectRequest;
 
 public class FrontActivity extends AppCompatActivity
         implements NavigationView.OnNavigationItemSelectedListener {
@@ -95,6 +111,11 @@ public class FrontActivity extends AppCompatActivity
     private LinearLayoutManager mRequestsManager;
     private ProgressBar mProgressBar;
     private List<String> mTempFriends;
+    final private String FCM_API = "https://fcm.googleapis.com/fcm/send";
+    final private String serverKey = "key=" + "AAAAgnprc9w:APA91bE-f5o3ju0LZFvw_HrmPRgm6fBrwEs9jwQ4tBukzfh8sWv4ktm8EHwfNfl7GbJl2A7sYbl6R7tlZmCPJn0fEX8pGJqWyqK87Pe-bZYL0qIutr6LW57Z8lUhqDh9W8C7LAg8q1bc";
+    final private String contentType = "application/json";
+    final String TAG = "NOTIFICATION TAG";
+    private String mTopic;
 
     // private AppBarConfiguration mAppBarConfiguration;
 
@@ -129,6 +150,22 @@ public class FrontActivity extends AppCompatActivity
 
       //  mDatabaseReference.child(PATH_FRIENDS).child(mFirebaseAuth.getUid()).child("zKAvAikUxUToVLGSbSD37jpRTj12")
               //  .setValue("");
+
+        FirebaseInstanceId.getInstance().getInstanceId()
+                .addOnCompleteListener(new OnCompleteListener<InstanceIdResult>() {
+                    @Override
+                    public void onComplete(@NonNull Task<InstanceIdResult> task) {
+                        if (!task.isSuccessful()) {
+//To do//
+                            return;
+                        }
+
+// Get the Instance ID token//
+                        String token = task.getResult().getToken();
+                        Log.i("token", token);
+
+                    }
+                });
 
         root = mDatabaseReference.child("Users");
         root.child(mFirebaseAuth.getUid()).addListenerForSingleValueEvent(new ValueEventListener() {
@@ -188,6 +225,8 @@ public class FrontActivity extends AppCompatActivity
        initializeFriendsAdapter();
        showFriends();
        initializeRequestsAdapter();
+        String token = FirebaseInstanceId.getInstance().getToken();
+        FirebaseMessaging.getInstance().subscribeToTopic(mFirebaseAuth.getUid());
     }
 
     private void filterByName(final String name){

@@ -21,7 +21,12 @@ import android.widget.Button;
 import android.widget.EditText;
 import android.widget.ImageView;
 import android.widget.TextView;
+import android.widget.Toast;
 
+import com.android.volley.AuthFailureError;
+import com.android.volley.Response;
+import com.android.volley.VolleyError;
+import com.android.volley.toolbox.JsonObjectRequest;
 import com.bumptech.glide.Glide;
 import com.google.firebase.auth.FirebaseAuth;
 import com.google.firebase.database.DataSnapshot;
@@ -32,15 +37,23 @@ import com.google.firebase.database.ValueEventListener;
 import com.google.firebase.storage.FirebaseStorage;
 import com.google.firebase.storage.StorageReference;
 
+import org.json.JSONException;
+import org.json.JSONObject;
+
 import java.io.FileNotFoundException;
 import java.io.IOException;
+import java.util.HashMap;
+import java.util.Map;
 
 import de.hdodenhof.circleimageview.CircleImageView;
 
 import static com.example.chat.FirebaseUtil.*;
 
 public class UserProfileActivity extends AppCompatActivity {
-
+    final private String FCM_API = "https://fcm.googleapis.com/fcm/send";
+    final private String serverKey = "key=" + "AAAAgnprc9w:APA91bE-f5o3ju0LZFvw_HrmPRgm6fBrwEs9jwQ4tBukzfh8sWv4ktm8EHwfNfl7GbJl2A7sYbl6R7tlZmCPJn0fEX8pGJqWyqK87Pe-bZYL0qIutr6LW57Z8lUhqDh9W8C7LAg8q1bc";
+    final private String contentType = "application/json";
+    final String TAG = "NOTIFICATION TAG";
     private static final int GET_FROM_GALLERY = 3;
     private static final String PHOTO = "Photo";
     private static final String NAME = "name";
@@ -301,6 +314,7 @@ public class UserProfileActivity extends AppCompatActivity {
 
         if (id == R.id.action_add_friend) {
             mReference.child(FrontActivity.PATH_REQUESTS).child(mUserID).child(sFirebaseAuth.getUid()).setValue(FrontActivity.mMyUSer.getName());
+            manageNotification();
             changePendingState(mBaseMenu);
         }
         if (id == R.id.action_send_message) {
@@ -341,6 +355,46 @@ public class UserProfileActivity extends AppCompatActivity {
             changeNotFriendsState(mBaseMenu);
         }
         return true;
+    }
+
+    private void manageNotification() {
+        JSONObject notification = new JSONObject();
+        JSONObject notifcationBody = new JSONObject();
+        try {
+            notifcationBody.put("title", "Request");
+            notifcationBody.put("message", FrontActivity.mMyUSer.getName() + " send you a friend request!");
+            notifcationBody.put(FrontActivity.USER_ID,mFirebaseAuth.getUid());
+            notification.put("to","/topics/"+mUserID);
+            notification.put("data", notifcationBody);
+        } catch (JSONException e) {
+        }
+        sendNotification(notification);
+    }
+    private void sendNotification(JSONObject notification) {
+        JsonObjectRequest jsonObjectRequest = new JsonObjectRequest(FCM_API, notification,
+                new Response.Listener<JSONObject>() {
+                    @Override
+                    public void onResponse(JSONObject response) {
+                        Log.i(TAG, "onResponse: " + response.toString());
+                      /*  edtTitle.setText("");
+                        edtMessage.setText("");*/
+                    }
+                },
+                new Response.ErrorListener() {
+                    @Override
+                    public void onErrorResponse(VolleyError error) {
+                        Log.i(TAG, "onErrorResponse: Didn't work");
+                    }
+                }){
+            @Override
+            public Map<String, String> getHeaders() throws AuthFailureError {
+                Map<String, String> params = new HashMap<>();
+                params.put("Authorization", serverKey);
+                params.put("Content-Type", contentType);
+                return params;
+            }
+        };
+        MySingleton.getInstance(getApplicationContext()).addToRequestQueue(jsonObjectRequest);
     }
 
     private void rejectRequest() {
