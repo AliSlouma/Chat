@@ -147,8 +147,16 @@ public class FrontActivity extends AppCompatActivity
 
     private DatabaseReference userState;
     public static boolean onpause = false;
+    private LinearLayoutManager profilesManager;
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
+        mFriends = new ArrayList<>();
+        mFriendsLayoutManager = new LinearLayoutManager(this);
+        mFriendsRecyclerAdapter = new FriendsRecyclerAdapter(mFriends,this);
+        mProfiles = new ArrayList<>();
+        mProfilesAdapter = new UsersRecyclerAdapter(mProfiles,this);
+        profilesManager = new LinearLayoutManager (this);
         mContacts = new HashSet<>();
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_front);
@@ -373,9 +381,7 @@ public class FrontActivity extends AppCompatActivity
 
 
     private void initializeFriendsAdapter(){
-        mFriends = new ArrayList<>();
-        mFriendsLayoutManager = new LinearLayoutManager(this);
-        mFriendsRecyclerAdapter = new FriendsRecyclerAdapter(mFriends,this);
+
         mDatabaseReference.child(PATH_FRIENDS).child(mFirebaseAuth.getUid()).addChildEventListener(new ChildEventListener() {
             @Override
             public void onChildAdded(@NonNull DataSnapshot dataSnapshot, @Nullable String s) {
@@ -519,8 +525,7 @@ public class FrontActivity extends AppCompatActivity
     }
 
     private void initializeProfileAdapter(){
-        mProfiles = new ArrayList<>();
-        mProfilesAdapter = new UsersRecyclerAdapter(mProfiles,this);
+
         sDatabaseReference.child("Users").addChildEventListener(new ChildEventListener() {
             @Override
             public void onChildAdded(@NonNull DataSnapshot dataSnapshot, @Nullable String s) {
@@ -619,7 +624,7 @@ public class FrontActivity extends AppCompatActivity
             chatInitialized = true;
             initializeChatAdapter();
         }
-        mSearchEditText.setVisibility(View.INVISIBLE);
+        mSearchEditText.setVisibility(View.VISIBLE);
         mFront_list.setAdapter(chatAdapter);
         mFront_list.setLayoutManager(linearLayoutManager);
     }
@@ -643,6 +648,7 @@ public class FrontActivity extends AppCompatActivity
         chatListRef.addChildEventListener(new ChildEventListener() {
             @Override
             public void onChildAdded(@NonNull DataSnapshot dataSnapshot, @Nullable String s) {
+                mProgressBar.setVisibility(View.VISIBLE);
                 chatInstanceList.add(dataSnapshot.getValue(ChatInstance.class));
                 chatAdapter.notifyDataSetChanged();
 
@@ -674,6 +680,18 @@ public class FrontActivity extends AppCompatActivity
 
             }
         });
+        chatListRef.addValueEventListener(new ValueEventListener() {
+            @Override
+            public void onDataChange(@NonNull DataSnapshot dataSnapshot) {
+                mProgressBar.setVisibility(View.INVISIBLE);
+            }
+
+            @Override
+            public void onCancelled(@NonNull DatabaseError databaseError) {
+
+            }
+        });
+
     }
 
     private void showRequests() {
@@ -687,13 +705,16 @@ public class FrontActivity extends AppCompatActivity
 
     }
     private void showProfiles(){
+
+
         mSearchEditText.setVisibility(View.VISIBLE);
         if(!usersInitialized){
             usersInitialized = true;
             initializeProfileAdapter();
         }
-        mFront_list.setLayoutManager(mFriendsLayoutManager);
+        mFront_list.setLayoutManager(profilesManager);
         mFront_list.setAdapter(mProfilesAdapter);
+
     }
 
 

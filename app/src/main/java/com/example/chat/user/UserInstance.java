@@ -9,6 +9,15 @@ public class UserInstance {
     private String mStatus;
     private String mImageUri;
     private String userState;
+    private boolean seen;
+
+    public boolean isSeen() {
+        return seen;
+    }
+
+    public void setSeen(boolean seen) {
+        this.seen = seen;
+    }
 
     public String getNumber() {
         return mNumber;

@@ -3,6 +3,7 @@ package com.example.chat.chats;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.appcompat.app.AppCompatActivity;
+import androidx.constraintlayout.widget.ConstraintLayout;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 
@@ -14,8 +15,11 @@ import android.view.View;
 import android.widget.EditText;
 import android.widget.ImageView;
 
+import com.example.chat.FirebaseUtil;
+import com.example.chat.FrontActivity;
 import com.example.chat.login.LoginActivity;
 import com.example.chat.R;
+import com.example.chat.user.UserProfileActivity;
 import com.google.android.gms.tasks.Continuation;
 import com.google.android.gms.tasks.OnCompleteListener;
 import com.google.android.gms.tasks.Task;
@@ -53,6 +57,7 @@ public class ChatActivity extends AppCompatActivity {
     String receiverName;
     String receiverPhoto;
     DatabaseReference userState;
+    ConstraintLayout constraintLayout;
 
 
 
@@ -180,6 +185,8 @@ public class ChatActivity extends AppCompatActivity {
         senderID = firebaseAuth.getUid();
         compareTheTwoIDS(senderID, receiverID , "messagesContent");
 
+        constraintLayout = findViewById(R.id.linearLayout);
+
 
         userRef = FirebaseDatabase.getInstance().getReference().child("Users").child(senderID);
         receRef = FirebaseDatabase.getInstance().getReference().child("Users").child(receiverID);
@@ -250,6 +257,32 @@ public class ChatActivity extends AppCompatActivity {
 
         userState = FirebaseDatabase.getInstance().getReference().child("Users").child(firebaseAuth.getUid());
 
+
+        FirebaseUtil.sDatabaseReference.child(FrontActivity.BLOCKED_USERS).child(receiverID).child(FirebaseUtil.sFirebaseAuth.getUid()).addValueEventListener(new ValueEventListener() {
+            @Override
+            public void onDataChange(@NonNull DataSnapshot dataSnapshot) {
+                if(dataSnapshot.getValue() != null)
+                {
+                    constraintLayout.setVisibility(View.INVISIBLE);
+                }
+                else
+                    constraintLayout.setVisibility(View.VISIBLE);
+
+            }
+
+            @Override
+            public void onCancelled(@NonNull DatabaseError databaseError) {
+
+            }
+        });
+
+    }
+
+    @Override
+    protected void onPause() {
+        super.onPause();
+
+        seenRef.child("seen").setValue(true);
     }
 
     private void setSeen() {
@@ -257,13 +290,13 @@ public class ChatActivity extends AppCompatActivity {
         seenRef.addListenerForSingleValueEvent(new ValueEventListener() {
             @Override
             public void onDataChange(@NonNull DataSnapshot dataSnapshot) {
+                if (dataSnapshot.exists()) {
 
-
-                ChatInstance instance = dataSnapshot.getValue(ChatInstance.class);
-                instance.setSeen(true);
-                seenRef.setValue(instance);
+                    ChatInstance instance = dataSnapshot.getValue(ChatInstance.class);
+                    instance.setSeen(true);
+                    seenRef.setValue(instance);
+                }
             }
-
             @Override
             public void onCancelled(@NonNull DatabaseError databaseError) {
 

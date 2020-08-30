@@ -623,8 +623,12 @@ public class UserProfileActivity extends AppCompatActivity {
                 @Override
                 public void onDataChange(@NonNull DataSnapshot dataSnapshot) {
                     if(dataSnapshot.getValue() != null) {
-                        changeFriendsState(mBaseMenu);
-                        Toast.makeText(getBaseContext(), "User Accepted request!", Toast.LENGTH_SHORT).show();
+                        finish();
+                        Intent intent = new Intent(getBaseContext(),UserProfileActivity.class);
+                        intent.putExtra(FrontActivity.STATE,FrontActivity.FRIENDS_ID);
+                        intent.putExtra(FrontActivity.USER_ID,mUserID);
+                        startActivity(intent);
+                        Toast.makeText(getApplicationContext(), "user accepted request" , Toast.LENGTH_SHORT).show();
                     }else {
                         mCancelCnt++;
                     }
