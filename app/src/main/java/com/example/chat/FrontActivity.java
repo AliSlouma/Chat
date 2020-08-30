@@ -48,7 +48,9 @@ import androidx.recyclerview.widget.RecyclerView;
 import org.json.JSONException;
 import org.json.JSONObject;
 
+import java.text.SimpleDateFormat;
 import java.util.ArrayList;
+import java.util.Calendar;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
@@ -102,7 +104,7 @@ public class FrontActivity extends AppCompatActivity
     private Button mSearchButton;
     private EditText mSearchEditText;
     private String mResult;
-    private HashMap<String,String > nameKeysMap;
+
     private FriendsRecyclerAdapter mFriendsRecyclerAdapter;
     private RecyclerView mFront_list;
     private LinearLayoutManager mFriendsLayoutManager;
@@ -117,6 +119,15 @@ public class FrontActivity extends AppCompatActivity
     final String TAG = "NOTIFICATION TAG";
     private String mTopic;
 
+    private RecyclerView chatListRecyclerView;
+    private LinearLayoutManager linearLayoutManager;
+    private  ChatAdapter chatAdapter;
+    private final List<ChatInstance> chatInstanceList = new ArrayList<>();
+    private ChatInstance chatInstance;
+    DatabaseReference chatListRef;
+
+    private DatabaseReference userState;
+    public static boolean onpause = false;
     // private AppBarConfiguration mAppBarConfiguration;
 
     @Override
@@ -138,7 +149,7 @@ public class FrontActivity extends AppCompatActivity
         mFirebaseDatabase = FirebaseDatabase.getInstance();
         mDatabaseReference = mFirebaseDatabase.getReference();
         forChats = FirebaseDatabase.getInstance().getReference();
-        mFront_list = (RecyclerView)findViewById(R.id.chat_list);
+        mFront_list = (RecyclerView)findViewById(R.id.chat_list_recylce_view);
 
         sendToSignin();
 
@@ -183,6 +194,7 @@ public class FrontActivity extends AppCompatActivity
                         .setValue("lol");
             }
 
+
             @Override
             public void onCancelled(@NonNull DatabaseError databaseError) {
 
@@ -218,15 +230,116 @@ public class FrontActivity extends AppCompatActivity
             }
         });
 
-       // nameKeysMap =null;
-        nameKeysMap = new HashMap<>();
         mChats = new ArrayList<>();
        // setChatAdapter();
-       initializeFriendsAdapter();
-       showFriends();
-       initializeRequestsAdapter();
+        initializeFriendsAdapter();
+       // showFriends();
+
+        initializeRequestsAdapter();
         String token = FirebaseInstanceId.getInstance().getToken();
         FirebaseMessaging.getInstance().subscribeToTopic(mFirebaseAuth.getUid());
+
+        chatInstance = new ChatInstance();
+        chatAdapter = new ChatAdapter(chatInstanceList,this);
+        chatListRecyclerView = findViewById(R.id.chat_list_recylce_view);
+        linearLayoutManager = new LinearLayoutManager(this);
+
+        showChats();
+        chatListRef =FirebaseDatabase.getInstance().getReference().child("ChatsList").child(mFirebaseAuth.getUid());
+
+
+        userState = FirebaseDatabase.getInstance().getReference().child("Users").child(mFirebaseAuth.getUid());
+
+        if (mFirebaseAuth.getCurrentUser() == null){
+            startActivity(new Intent(this, LoginActivity.class));
+            finish();
+        }else{
+            userState.child("userState").setValue("online");
+
+
+
+        }
+        chatListRef.addChildEventListener(new ChildEventListener() {
+            @Override
+            public void onChildAdded(@NonNull DataSnapshot dataSnapshot, @Nullable String s) {
+                chatInstanceList.add(dataSnapshot.getValue(ChatInstance.class));
+                chatAdapter.notifyDataSetChanged();
+
+            }
+
+            @Override
+            public void onChildChanged(@NonNull DataSnapshot dataSnapshot, @Nullable String s) {
+                ChatInstance c = dataSnapshot.getValue(ChatInstance.class);
+                for(int i =0;i<chatInstanceList.size();i++){
+                    if(c.getReceiverUID().equals(chatInstanceList.get(i).getReceiverUID()))
+                        chatInstanceList.set(i,c);
+                }
+                chatAdapter.notifyDataSetChanged();
+
+            }
+
+            @Override
+            public void onChildRemoved(@NonNull DataSnapshot dataSnapshot) {
+
+            }
+
+            @Override
+            public void onChildMoved(@NonNull DataSnapshot dataSnapshot, @Nullable String s) {
+
+            }
+
+            @Override
+            public void onCancelled(@NonNull DatabaseError databaseError) {
+
+            }
+        });
+
+    }
+
+
+    protected void onStart() {
+        super.onStart();
+        onpause = false;
+        if (mFirebaseAuth.getCurrentUser() == null){
+            startActivity(new Intent(this, LoginActivity.class));
+            finish();
+        }else{
+            userState.child("userState").setValue("online");
+
+
+        }
+    }
+
+    @Override
+    protected void onPause() {
+        super.onPause();
+        if(!onpause){
+
+            Calendar calendar = Calendar.getInstance();
+
+            SimpleDateFormat timeFormat = new SimpleDateFormat("hh:mm a");
+
+            String currentTime = timeFormat.format(calendar.getTime());
+
+            userState.child("userState").setValue(currentTime);
+
+        }
+    }
+
+    @Override
+    protected void onDestroy() {
+        super.onDestroy();
+        if(mFirebaseAuth.getCurrentUser() != null){
+
+            Calendar calendar = Calendar.getInstance();
+
+            SimpleDateFormat timeFormat = new SimpleDateFormat("hh:mm a");
+
+            String currentTime = timeFormat.format(calendar.getTime());
+
+            userState.child("userState").setValue(currentTime);
+
+        }
     }
 
     private void filterByName(final String name){
@@ -298,62 +411,115 @@ public class FrontActivity extends AppCompatActivity
     }
 
 
+//
+//    private void setChatAdapter() {
+//        mDatabaseReference.child("friends").child(mFirebaseAuth.getUid()).addChildEventListener(new ChildEventListener() {
+//            @Override
+//            public void onChildAdded(@NonNull DataSnapshot dataSnapshot, @Nullable String s) {
+//                    String friendID = dataSnapshot.getKey();
+//                    getFriendName(friendID);
+//                  //  getFriendLastMessage(friendID);
+//                    chatInstance.setReceiverUID(friendID);
+//
+//
+//            }
+//
+//            @Override
+//            public void onChildChanged(@NonNull DataSnapshot dataSnapshot, @Nullable String s) {
+//
+//            }
+//
+//            @Override
+//            public void onChildRemoved(@NonNull DataSnapshot dataSnapshot) {
+//
+//            }
+//
+//            @Override
+//            public void onChildMoved(@NonNull DataSnapshot dataSnapshot, @Nullable String s) {
+//
+//            }
+//
+//            @Override
+//            public void onCancelled(@NonNull DatabaseError databaseError) {
+//
+//            }
+//        });
+//    }
 
-    private void setChatAdapter() {
-        mDatabaseReference.child("friends").child(mFirebaseAuth.getUid()).addValueEventListener(new ValueEventListener() {
-            @Override
-            public void onDataChange(@NonNull DataSnapshot dataSnapshot) {
-                if(dataSnapshot.exists()){
-                    Iterator iterator = dataSnapshot.getChildren().iterator();
-                    while (iterator.hasNext()){
-                        final String friendKey = (String) ((DataSnapshot)(iterator.next())).getKey();
-                        root.child(friendKey).addValueEventListener(new ValueEventListener() {
+//    private void getFriendLastMessage(final String friendID){
+//        final String child;
+//        if(mFirebaseAuth.getUid().compareTo(friendID) >=0){
+//            child = mFirebaseAuth.getUid()+friendID;
+//        }else
+//            child = friendID +mFirebaseAuth.getUid();
+//
+//        final DatabaseReference reference = FirebaseDatabase.getInstance().getReference().child("lastMessage");
+//        reference.addValueEventListener(new ValueEventListener() {
+//            @Override
+//            public void onDataChange(@NonNull DataSnapshot dataSnapshot) {
+//                if(dataSnapshot.child(child).exists()) {
+//                    chatInstance.setLastMessage(dataSnapshot.child(child).getValue().toString());
+//
+//                    chatListRef = FirebaseDatabase.getInstance().getReference().child("Chats").child(mFirebaseAuth.getUid());
+//                    chatListRef.child(friendID).setValue(chatInstance);
+//
+//                }else {
+//                    chatInstance.setLastMessage("You are now friends !! tap to send a message");
+//
+//                    chatListRef = FirebaseDatabase.getInstance().getReference().child("Chats").child(mFirebaseAuth.getUid());
+//                    chatListRef.child(friendID).setValue(chatInstance);
+//                }
+//
+//            }
+//
+//            @Override
+//            public void onCancelled(@NonNull DatabaseError databaseError) {
+//
+//            }
+//        });
+//
+//    }
+//
+//    private void getFriendName(final String friendID) {
+//        DatabaseReference reference = FirebaseDatabase.getInstance().getReference().child("Users").child(friendID);
+//        reference.addValueEventListener(new ValueEventListener() {
+//            @Override
+//            public void onDataChange(@NonNull DataSnapshot dataSnapshot) {
+////                if(dataSnapshot.child("name").exists())
+//                    chatInstance.setReceiver(dataSnapshot.child("name").getValue().toString());
+//                chatListRef = FirebaseDatabase.getInstance().getReference().child("Chats").child(mFirebaseAuth.getUid());
+//                chatListRef.child(friendID).setValue(chatInstance);
+//
+//            }
+//
+//            @Override
+//            public void onCancelled(@NonNull DatabaseError databaseError) {
+//
+//            }
+//        });
+//
+//    }
 
-                            public void onDataChange(@NonNull DataSnapshot dataSnapshot) {
-                                    String friend = (String) dataSnapshot.child("name").getValue();
-                                    mChats.add(friend);
-                                    nameKeysMap.put(friend,friendKey);
-                                    mChatsAdapter.notifyDataSetChanged();
-                            }
-
-                            @Override
-                            public void onCancelled(@NonNull DatabaseError databaseError) {
-
-                            }
-                        });
-
-                    }
-                }
-            }
-
-            @Override
-            public void onCancelled(@NonNull DatabaseError databaseError) {
-
-            }
-        });
-    }
-
-
-
-    private void arrayAdapterFunc() {
-        //mChats.add("Test Chat");
-        mChatsAdapter = new ArrayAdapter<>(getApplicationContext(),android.R.layout.simple_list_item_1 , mChats);
-        listView.setAdapter(mChatsAdapter);
-        mChatsListner = new AdapterView.OnItemClickListener() {
-            @Override
-            public void onItemClick(AdapterView<?> adapterView, View view, int postion, long id) {
-                Intent intent = new Intent(getApplicationContext() , ChatActivity.class);
-                String receiver = (String) adapterView.getItemAtPosition(postion);
-                intent.putExtra("receiverID",nameKeysMap.get(receiver));
-                startActivity(intent);
-            }
-        };
-        showChats();
-//        initializeFriendsAdapter();
-//        initializeProfileAdapter();
-        initializeRequestsAdapter();
-    }
-
+//
+//    private void arrayAdapterFunc() {
+//        //mChats.add("Test Chat");
+//        mChatsAdapter = new ArrayAdapter<>(getApplicationContext(),android.R.layout.simple_list_item_1 , mChats);
+//        listView.setAdapter(mChatsAdapter);
+//        mChatsListner = new AdapterView.OnItemClickListener() {
+//            @Override
+//            public void onItemClick(AdapterView<?> adapterView, View view, int postion, long id) {
+//                Intent intent = new Intent(getApplicationContext() , ChatActivity.class);
+//                String receiver = (String) adapterView.getItemAtPosition(postion);
+//                intent.putExtra("receiverID",nameKeysMap.get(receiver));
+//                startActivity(intent);
+//            }
+//        };
+//        showChats();
+////        initializeFriendsAdapter();
+////        initializeProfileAdapter();
+//        initializeRequestsAdapter();
+//    }
+//
 
     private void sendToSignin() {
         if (mFirebaseAuth.getCurrentUser() == null){
@@ -617,9 +783,8 @@ public class FrontActivity extends AppCompatActivity
     }
 
     private void showChats() {
-
-        listView.setAdapter(mChatsAdapter);
-        listView.setOnItemClickListener(mChatsListner);
+        chatListRecyclerView.setLayoutManager(linearLayoutManager);
+        chatListRecyclerView.setAdapter(chatAdapter);
 
     }
     private void showRequests() {

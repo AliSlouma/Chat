@@ -7,18 +7,34 @@ public class ChatInstance {
     private String mReceiverUID;
     private String mLastMessage;
     private String Time;
+    private String friendPhoto;
+    private boolean seen;
 
-    public ChatInstance(String receiver, String receiverUID, String lastMessage, String time) {
-        mReceiver = receiver;
-        mReceiverUID = receiverUID;
-        mLastMessage = lastMessage;
+    public ChatInstance(String mReceiver, String mReceiverUID, String mLastMessage, String time, String friendPhoto) {
+        this.mReceiver = mReceiver;
+        this.mReceiverUID = mReceiverUID;
+        this.mLastMessage = mLastMessage;
         Time = time;
+        this.friendPhoto = friendPhoto;
     }
 
-    @NonNull
-    @Override
-    public String toString() {
-       return mReceiver + "\n" + mLastMessage;
+    public ChatInstance() {
+    }
+
+    public boolean isSeen() {
+        return seen;
+    }
+
+    public void setSeen(boolean seen) {
+        this.seen = seen;
+    }
+
+    public String getFriendPhoto() {
+        return friendPhoto;
+    }
+
+    public void setFriendPhoto(String friendPhoto) {
+        this.friendPhoto = friendPhoto;
     }
 
     public String getReceiver() {
