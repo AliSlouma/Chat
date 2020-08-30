@@ -1,4 +1,4 @@
-package com.example.chat;
+package com.example.chat.adapters;
 
 import android.content.Context;
 import android.content.Intent;
@@ -8,11 +8,16 @@ import android.view.ViewGroup;
 import android.widget.Button;
 import android.widget.ImageView;
 import android.widget.TextView;
+import android.widget.Toast;
 
 import androidx.annotation.NonNull;
 import androidx.recyclerview.widget.RecyclerView;
 
 import com.bumptech.glide.Glide;
+import com.example.chat.FrontActivity;
+import com.example.chat.R;
+import com.example.chat.user.UserInstance;
+import com.example.chat.user.UserProfileActivity;
 import com.google.firebase.database.DataSnapshot;
 import com.google.firebase.database.DatabaseError;
 import com.google.firebase.database.ValueEventListener;
@@ -22,9 +27,9 @@ import java.util.List;
 import static com.example.chat.FirebaseUtil.sDatabaseReference;
 
 public class FriendsRecyclerAdapter extends RecyclerView.Adapter<FriendsRecyclerAdapter.FriendViewHolder>{
-    List<String> mFriends;
+    public List<UserInstance> mFriends;
     Context mContext;
-    public FriendsRecyclerAdapter(List<String> friends , Context context){
+    public FriendsRecyclerAdapter(List<UserInstance> friends , Context context){
         this.mContext = context;
         this.mFriends = friends;
     }
@@ -37,22 +42,11 @@ public class FriendsRecyclerAdapter extends RecyclerView.Adapter<FriendsRecycler
 
     @Override
     public void onBindViewHolder(@NonNull final FriendViewHolder holder, int position) {
-        String user_id = mFriends.get(position);
-        sDatabaseReference.child("Users").child(user_id).addListenerForSingleValueEvent(new ValueEventListener() {
-            @Override
-            public void onDataChange(@NonNull DataSnapshot dataSnapshot) {
-                UserInstance userInstance = dataSnapshot.getValue(UserInstance.class);
-                holder.name.setText(userInstance.getName());
-                holder.status.setText(userInstance.getStatus());
-                Glide.with(mContext).load(userInstance.getImageUri()).into(holder.image);
-                holder.user_id = userInstance.getUId();
-            }
-
-            @Override
-            public void onCancelled(@NonNull DatabaseError databaseError) {
-
-            }
-        });
+        UserInstance userInstance = mFriends.get(position);
+        holder.name.setText(userInstance.getName());
+        holder.status.setText(userInstance.getStatus());
+        Glide.with(mContext).load(userInstance.getImageUri()).into(holder.image);
+        holder.user_id = userInstance.getUId();
     }
 
     @Override
@@ -79,12 +73,38 @@ public class FriendsRecyclerAdapter extends RecyclerView.Adapter<FriendsRecycler
             itemView.setOnClickListener(new View.OnClickListener() {
                 @Override
                 public void onClick(View view) {
-                    Intent intent = new Intent(mContext , UserProfileActivity.class);
-                    intent.putExtra(FrontActivity.USER_ID, user_id);
-                    intent.putExtra(FrontActivity.STATE,FrontActivity.FRIENDS_ID);
-                    mContext.startActivity(intent);
+                    sDatabaseReference.child("Users").child(user_id).addListenerForSingleValueEvent(new ValueEventListener() {
+                        @Override
+                        public void onDataChange(@NonNull DataSnapshot dataSnapshot) {
+                            if(dataSnapshot.exists()){
+                                Intent intent = new Intent(mContext , UserProfileActivity.class);
+                                intent.putExtra(FrontActivity.USER_ID, user_id);
+                                intent.putExtra(FrontActivity.STATE,FrontActivity.FRIENDS_ID);
+                                mContext.startActivity(intent);
+                            }else{
+                                Toast.makeText(mContext,"Users deleted himself",Toast.LENGTH_SHORT).show();
+                                delete(user_id);
+                            }
+                        }
+
+                        @Override
+                        public void onCancelled(@NonNull DatabaseError databaseError) {
+
+                        }
+                    });
+
                 }
             });
         }
+    }
+
+    private void delete(String user_id) {
+        for(int i=0 ; i<mFriends.size() ; i++){
+            if(mFriends.get(i).getUId().equals(user_id)) {
+                mFriends.remove(i);
+                break;
+            }
+        }
+        notifyDataSetChanged();
     }
 }

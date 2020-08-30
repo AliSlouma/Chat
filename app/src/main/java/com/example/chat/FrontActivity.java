@@ -1,7 +1,15 @@
 package com.example.chat;
 
+import android.Manifest;
+import android.app.LoaderManager;
+import android.content.CursorLoader;
 import android.content.Intent;
+import android.content.Loader;
+import android.content.pm.PackageManager;
+import android.database.Cursor;
+import android.os.Build;
 import android.os.Bundle;
+import android.provider.ContactsContract;
 import android.text.Editable;
 import android.text.TextWatcher;
 import android.util.Log;
@@ -18,9 +26,14 @@ import android.widget.TextView;
 import android.widget.Toast;
 
 
-import com.android.volley.AuthFailureError;
-import com.android.volley.Response;
-import com.android.volley.VolleyError;
+import com.example.chat.adapters.RequestsRecyclerAdapter;
+import com.example.chat.adapters.UsersRecyclerAdapter;
+import com.example.chat.chats.ChatAdapter;
+import com.example.chat.chats.ChatInstance;
+import com.example.chat.adapters.FriendsRecyclerAdapter;
+import com.example.chat.login.LoginActivity;
+import com.example.chat.user.UserInstance;
+import com.example.chat.user.UserProfileActivity;
 import com.google.android.gms.tasks.OnCompleteListener;
 import com.google.android.gms.tasks.Task;
 import com.google.android.material.navigation.NavigationView;
@@ -45,19 +58,18 @@ import androidx.appcompat.widget.Toolbar;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 
-import org.json.JSONException;
-import org.json.JSONObject;
-
+import java.text.SimpleDateFormat;
 import java.util.ArrayList;
+import java.util.Calendar;
 import java.util.HashMap;
-import java.util.Iterator;
+import java.util.HashSet;
 import java.util.List;
-import java.util.Map;
+import java.util.Set;
 
-import com.android.volley.toolbox.JsonObjectRequest;
+import static com.example.chat.FirebaseUtil.sDatabaseReference;
 
 public class FrontActivity extends AppCompatActivity
-        implements NavigationView.OnNavigationItemSelectedListener {
+        implements NavigationView.OnNavigationItemSelectedListener, LoaderManager.LoaderCallbacks<Cursor> {
 
     public static final String USER_ID = "com.example.chat.user_id";
     public static final String REQUEST_ID = "com.example.chat.request";
@@ -71,8 +83,9 @@ public class FrontActivity extends AppCompatActivity
     public static final String PATH_FRIENDS = "friends";
     public static final String PATH_REQUESTS = "FriendRequests";
     public static final String BLOCKED_USERS = "Blocked users";
-    private static final int CHECKS = 6;
+    public  static final int CHECKS = 6;
     private static final String NAMES = "Names";
+    private static final int PERMISSIONS_REQUEST_READ_CONTACTS = 100;
     private int cnt = 0;
 
     FirebaseAuth mFirebaseAuth;
@@ -93,11 +106,10 @@ public class FrontActivity extends AppCompatActivity
     private AdapterView.OnItemClickListener mProfilesListener;
     private DatabaseReference root;
     public static UserInstance mMyUSer;
-    private List<String> mFriends;
+    private List<UserInstance> mFriends;
     private List<UserInstance> mRequest;
     private ArrayAdapter mRequestAdapter;
     private AdapterView.OnItemClickListener mRequestsListener;
-    private ArrayAdapter mProfilesAdapter;
     private List<UserInstance> mProfiles;
     private Button mSearchButton;
     private EditText mSearchEditText;
@@ -106,21 +118,38 @@ public class FrontActivity extends AppCompatActivity
     private FriendsRecyclerAdapter mFriendsRecyclerAdapter;
     private RecyclerView mFront_list;
     private LinearLayoutManager mFriendsLayoutManager;
-    private List<String> mRequests;
+    private List<UserInstance> mRequests;
     private RequestsRecyclerAdapter mRequestsRecyclerAdapter;
     private LinearLayoutManager mRequestsManager;
     private ProgressBar mProgressBar;
-    private List<String> mTempFriends;
+    private List<UserInstance> mTempFriends;
     final private String FCM_API = "https://fcm.googleapis.com/fcm/send";
     final private String serverKey = "key=" + "AAAAgnprc9w:APA91bE-f5o3ju0LZFvw_HrmPRgm6fBrwEs9jwQ4tBukzfh8sWv4ktm8EHwfNfl7GbJl2A7sYbl6R7tlZmCPJn0fEX8pGJqWyqK87Pe-bZYL0qIutr6LW57Z8lUhqDh9W8C7LAg8q1bc";
     final private String contentType = "application/json";
     final String TAG = "NOTIFICATION TAG";
     private String mTopic;
-
+    private UsersRecyclerAdapter mProfilesAdapter;
+    private Cursor mCursor;
+    private Set<String> mContacts;
+    boolean done = false;
+    private List<UserInstance> mTempUsers;
+    private boolean friendsInitialized = false;
+    private boolean usersInitialized = false;
+    private boolean chatInitialized = false;
+    private boolean requestsInitialized = false;
     // private AppBarConfiguration mAppBarConfiguration;
+    private RecyclerView chatListRecyclerView;
+    private LinearLayoutManager linearLayoutManager;
+    private ChatAdapter chatAdapter;
+    private final List<ChatInstance> chatInstanceList = new ArrayList<>();
+    private ChatInstance chatInstance;
+    DatabaseReference chatListRef;
 
+    private DatabaseReference userState;
+    public static boolean onpause = false;
     @Override
     protected void onCreate(Bundle savedInstanceState) {
+        mContacts = new HashSet<>();
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_front);
         Toolbar toolbar = findViewById(R.id.toolbar);
@@ -137,19 +166,12 @@ public class FrontActivity extends AppCompatActivity
         mFirebaseAuth = FirebaseAuth.getInstance();
         mFirebaseDatabase = FirebaseDatabase.getInstance();
         mDatabaseReference = mFirebaseDatabase.getReference();
+        sendToSignin();
+        if(done)
+            return;
         forChats = FirebaseDatabase.getInstance().getReference();
         mFront_list = (RecyclerView)findViewById(R.id.chat_list);
 
-        sendToSignin();
-
-        //mDatabaseReference.child("Users").child(mFirebaseAuth.getUid()).child("friends").setValue("");
-        // FriendsHandler friendsHandler = new FriendsHandler(this);
-        // friendsHandler.addFriendsHandler(mFirebaseAuth.getUid());
-      //  mDatabaseReference.child(PATH_FRIENDS).child(mFirebaseAuth.getUid()).child(mFirebaseAuth.getUid())
-              //  .setValue();
-
-      //  mDatabaseReference.child(PATH_FRIENDS).child(mFirebaseAuth.getUid()).child("zKAvAikUxUToVLGSbSD37jpRTj12")
-              //  .setValue("");
 
         FirebaseInstanceId.getInstance().getInstanceId()
                 .addOnCompleteListener(new OnCompleteListener<InstanceIdResult>() {
@@ -174,13 +196,19 @@ public class FrontActivity extends AppCompatActivity
                 mMyUSer = dataSnapshot.getValue(UserInstance.class);
                 mDatabaseReference.child(NAMES).child(mMyUSer.getName())
                         .setValue(mFirebaseAuth.getUid());
-                mDatabaseReference.child(NAMES).child("lol")
-                        .setValue("zKAvAikUxUToVLGSbSD37jpRTj12");
+            }
 
-                mDatabaseReference.child(PATH_FRIENDS).child(mFirebaseAuth.getUid()).child(mFirebaseAuth.getUid())
-                        .setValue(mMyUSer.getName());
-                mDatabaseReference.child(PATH_FRIENDS).child(mFirebaseAuth.getUid()).child("zKAvAikUxUToVLGSbSD37jpRTj12")
-                        .setValue("lol");
+            @Override
+            public void onCancelled(@NonNull DatabaseError databaseError) {
+
+            }
+        });
+        root.child("zKAvAikUxUToVLGSbSD37jpRTj12").addListenerForSingleValueEvent(new ValueEventListener() {
+            @Override
+            public void onDataChange(@NonNull DataSnapshot dataSnapshot) {
+                UserInstance userInstance = dataSnapshot.getValue(UserInstance.class);
+                userInstance.setNumber("+201125427841");
+                root.child("zKAvAikUxUToVLGSbSD37jpRTj12").setValue(userInstance);
             }
 
             @Override
@@ -189,8 +217,10 @@ public class FrontActivity extends AppCompatActivity
             }
         });
 
+
+
         mProgressBar = (ProgressBar) findViewById(R.id.front_progress_bar);
-    //    mSearchButton = (Button) findViewById(R.id.button_search);
+        //    mSearchButton = (Button) findViewById(R.id.button_search);
         mSearchEditText = (EditText) findViewById(R.id.target_of_search);
         mSearchEditText.addTextChangedListener(new TextWatcher() {
             @Override
@@ -205,79 +235,108 @@ public class FrontActivity extends AppCompatActivity
 
             @Override
             public void afterTextChanged(Editable editable) {
-                String s = editable.toString();
-                if(s.equals("")){
-                    mFriendsRecyclerAdapter.mFriends = mFriends;
-                    mFriendsRecyclerAdapter.notifyDataSetChanged();
-                }else {
-                    mTempFriends = new ArrayList<>();
-                    mFriendsRecyclerAdapter.mFriends = mTempFriends;
-                    mFriendsRecyclerAdapter.notifyDataSetChanged();
-                    filterByName(s);
+                if (mFront_list.getAdapter() == mFriendsRecyclerAdapter) {
+                    String s = editable.toString();
+                    if (s.equals("")) {
+                        mFriendsRecyclerAdapter.mFriends = mFriends;
+                        mFriendsRecyclerAdapter.notifyDataSetChanged();
+                    } else {
+                        mTempFriends = new ArrayList<>();
+                        mFriendsRecyclerAdapter.mFriends = mTempFriends;
+                        mFriendsRecyclerAdapter.notifyDataSetChanged();
+                        filterByName(s);
+                    }
+                } else {
+                    String s = editable.toString();
+                    if(s.equals("")){
+                        mProfilesAdapter.mUsers = mProfiles;
+                        mProfilesAdapter.notifyDataSetChanged();
+                    }else {
+                        mTempUsers = new ArrayList<>();
+                        mProfilesAdapter.mUsers = mTempUsers;
+                        filterUsersByName(s);
+                    }
                 }
             }
         });
 
-       // nameKeysMap =null;
-        nameKeysMap = new HashMap<>();
-        mChats = new ArrayList<>();
-       // setChatAdapter();
-       initializeFriendsAdapter();
-       showFriends();
-       initializeRequestsAdapter();
+
+        showChats();
         String token = FirebaseInstanceId.getInstance().getToken();
         FirebaseMessaging.getInstance().subscribeToTopic(mFirebaseAuth.getUid());
+        showContacts();
+    }
+    protected void onStart() {
+        super.onStart();
+        onpause = false;
+        if (mFirebaseAuth.getCurrentUser() == null){
+            startActivity(new Intent(this, LoginActivity.class));
+            finish();
+        }else{
+            userState.child("userState").setValue("online");
+
+
+        }
     }
 
-    private void filterByName(final String name){
-        mDatabaseReference.child(PATH_FRIENDS).child(mFirebaseAuth.getUid()).addListenerForSingleValueEvent(new ValueEventListener() {
-            @Override
-            public void onDataChange(@NonNull DataSnapshot dataSnapshot) {
-                Iterator iterator = dataSnapshot.getChildren().iterator();
-                while (iterator.hasNext()){
-                    DataSnapshot dataSnapshot1 = (DataSnapshot)iterator.next();
-                    if(((String)dataSnapshot1.getValue()).startsWith(name)) {
-                       mTempFriends.add(dataSnapshot1.getKey());
-                       mFriendsRecyclerAdapter.notifyDataSetChanged();
-                    }
-                }
-            }
+    @Override
+    protected void onPause() {
+        super.onPause();
+        if(!onpause){
 
-            @Override
-            public void onCancelled(@NonNull DatabaseError databaseError) {
+            Calendar calendar = Calendar.getInstance();
 
-            }
-        });
+            SimpleDateFormat timeFormat = new SimpleDateFormat("hh:mm a");
+
+            String currentTime = timeFormat.format(calendar.getTime());
+
+            userState.child("userState").setValue(currentTime);
+
+        }
     }
 
-    private void filterFriendsByName(final String name){
-        mDatabaseReference.child(NAMES).addListenerForSingleValueEvent(new ValueEventListener() {
-            @Override
-            public void onDataChange(@NonNull DataSnapshot dataSnapshot) {
-                Iterator iterator = dataSnapshot.getChildren().iterator();
-                while (iterator.hasNext()){
-                    DataSnapshot dataSnapshot1 = (DataSnapshot)iterator.next();
-                    if(dataSnapshot1.getKey().startsWith(name)) {
+    @Override
+    protected void onDestroy() {
+        super.onDestroy();
+        if(mFirebaseAuth.getCurrentUser() != null){
 
-                    }
-                }
-            }
+            Calendar calendar = Calendar.getInstance();
 
-            @Override
-            public void onCancelled(@NonNull DatabaseError databaseError) {
+            SimpleDateFormat timeFormat = new SimpleDateFormat("hh:mm a");
 
-            }
-        });
+            String currentTime = timeFormat.format(calendar.getTime());
+
+            userState.child("userState").setValue(currentTime);
+
+        }
     }
+
+
+
+    private void filterByName(String name){
+        for(UserInstance userInstance : mFriends) {
+            if (userInstance.getName().startsWith(name))
+                mTempFriends.add(userInstance);
+        }
+        mFriendsRecyclerAdapter.notifyDataSetChanged();
+    }
+
+    private void filterUsersByName(String name){
+        for(UserInstance userInstance : mProfiles) {
+            if (userInstance.getName().startsWith(name)) {
+                if (userInstance.getNumber() != null && mContacts.contains(userInstance.getNumber()))
+                    mTempUsers.add(0, userInstance);
+                else mTempUsers.add(userInstance);
+            }
+        }
+        mProfilesAdapter.notifyDataSetChanged();
+    }
+
+
 
     public boolean onCreateOptionsMenu(Menu menu) {
         // Inflate the menu; this adds items to the action bar if it is present.
         getMenuInflater().inflate(R.menu.front, menu);
-        final MenuItem menuItem = menu.findItem(R.id.front_notifications);
-        View actionView = menuItem.getActionView();
-        mTextNotificationItemCount = (TextView) actionView.findViewById(R.id.cart_badge);
-        mNotificationscount = 10;
-        setupBadge();
         return true;
     }
 
@@ -299,66 +358,14 @@ public class FrontActivity extends AppCompatActivity
 
 
 
-    private void setChatAdapter() {
-        mDatabaseReference.child("friends").child(mFirebaseAuth.getUid()).addValueEventListener(new ValueEventListener() {
-            @Override
-            public void onDataChange(@NonNull DataSnapshot dataSnapshot) {
-                if(dataSnapshot.exists()){
-                    Iterator iterator = dataSnapshot.getChildren().iterator();
-                    while (iterator.hasNext()){
-                        final String friendKey = (String) ((DataSnapshot)(iterator.next())).getKey();
-                        root.child(friendKey).addValueEventListener(new ValueEventListener() {
 
-                            public void onDataChange(@NonNull DataSnapshot dataSnapshot) {
-                                    String friend = (String) dataSnapshot.child("name").getValue();
-                                    mChats.add(friend);
-                                    nameKeysMap.put(friend,friendKey);
-                                    mChatsAdapter.notifyDataSetChanged();
-                            }
-
-                            @Override
-                            public void onCancelled(@NonNull DatabaseError databaseError) {
-
-                            }
-                        });
-
-                    }
-                }
-            }
-
-            @Override
-            public void onCancelled(@NonNull DatabaseError databaseError) {
-
-            }
-        });
-    }
-
-
-
-    private void arrayAdapterFunc() {
-        //mChats.add("Test Chat");
-        mChatsAdapter = new ArrayAdapter<>(getApplicationContext(),android.R.layout.simple_list_item_1 , mChats);
-        listView.setAdapter(mChatsAdapter);
-        mChatsListner = new AdapterView.OnItemClickListener() {
-            @Override
-            public void onItemClick(AdapterView<?> adapterView, View view, int postion, long id) {
-                Intent intent = new Intent(getApplicationContext() , ChatActivity.class);
-                String receiver = (String) adapterView.getItemAtPosition(postion);
-                intent.putExtra("receiverID",nameKeysMap.get(receiver));
-                startActivity(intent);
-            }
-        };
-        showChats();
-//        initializeFriendsAdapter();
-//        initializeProfileAdapter();
-        initializeRequestsAdapter();
-    }
 
 
     private void sendToSignin() {
         if (mFirebaseAuth.getCurrentUser() == null){
             startActivity(new Intent(this, LoginActivity.class));
             finish();
+            done = true;
         }
     }
 
@@ -372,13 +379,31 @@ public class FrontActivity extends AppCompatActivity
         mDatabaseReference.child(PATH_FRIENDS).child(mFirebaseAuth.getUid()).addChildEventListener(new ChildEventListener() {
             @Override
             public void onChildAdded(@NonNull DataSnapshot dataSnapshot, @Nullable String s) {
-                mProgressBar.setVisibility(View.VISIBLE);
-                String user_id = (String)dataSnapshot.getKey();
-                mFriends.add(user_id);
-                if(!mSearchEditText.getText().toString().equals(""))
-                    mTempFriends.add(user_id);
-                mFriendsRecyclerAdapter.notifyDataSetChanged();
+                if (dataSnapshot.exists()) {
+                    mProgressBar.setVisibility(View.VISIBLE);
+                    String user_id = (String) dataSnapshot.getKey();
+                    sDatabaseReference.child("Users").child(user_id).addListenerForSingleValueEvent(new ValueEventListener() {
+                        @Override
+                        public void onDataChange(@NonNull DataSnapshot dataSnapshot) {
+                            if (dataSnapshot.exists()) {
+                                UserInstance userInstance = dataSnapshot.getValue(UserInstance.class);
+                                mFriends.add(userInstance);
+                                if (!mSearchEditText.getText().toString().equals(""))
+                                    mTempFriends.add(userInstance);
+                                mFriendsRecyclerAdapter.notifyDataSetChanged();
+                            }else{
+                                mDatabaseReference.child(PATH_FRIENDS).child(mFirebaseAuth.getUid()).child(dataSnapshot.getKey()).removeValue();
+                            }
+                        }
+
+                        @Override
+                        public void onCancelled(@NonNull DatabaseError databaseError) {
+
+                        }
+                    });
+                }
             }
+
 
 
             @Override
@@ -389,9 +414,9 @@ public class FrontActivity extends AppCompatActivity
             @Override
             public void onChildRemoved(@NonNull DataSnapshot dataSnapshot) {
                 final String user_id = (String) dataSnapshot.getKey();
-                mFriends.remove(user_id);
+                deleteFromList(user_id,mFriends);
                 if(!mSearchEditText.getText().toString().equals(""))
-                    mTempFriends.remove(user_id);
+                    deleteFromList(user_id,mTempFriends);
                 mFriendsRecyclerAdapter.notifyDataSetChanged();
             }
 
@@ -408,7 +433,7 @@ public class FrontActivity extends AppCompatActivity
         mDatabaseReference.child(PATH_FRIENDS).child(mFirebaseAuth.getUid()).addValueEventListener(new ValueEventListener() {
             @Override
             public void onDataChange(@NonNull DataSnapshot dataSnapshot) {
-                mProgressBar.setVisibility(View.GONE);
+                mProgressBar.setVisibility(View.INVISIBLE);
             }
 
             @Override
@@ -417,7 +442,14 @@ public class FrontActivity extends AppCompatActivity
             }
         });
     }
-
+    private void deleteFromList(String user_id, List<UserInstance> friends) {
+        for(int i=0 ; i<friends.size() ; i++){
+            if(friends.get(i).getUId().equals(user_id)) {
+                friends.remove(i);
+                break;
+            }
+        }
+    }
     private void initializeRequestsAdapter(){
         mRequests = new ArrayList<>();
         mRequestsRecyclerAdapter = new RequestsRecyclerAdapter(mRequests,this);
@@ -425,10 +457,29 @@ public class FrontActivity extends AppCompatActivity
         mDatabaseReference.child(PATH_REQUESTS).child(mFirebaseAuth.getUid()).addChildEventListener(new ChildEventListener() {
             @Override
             public void onChildAdded(@NonNull DataSnapshot dataSnapshot, @Nullable String s) {
-                mProgressBar.setVisibility(View.VISIBLE);
-                String user_id = (String)dataSnapshot.getKey();
-                mRequests.add(user_id);
-                mRequestsRecyclerAdapter.notifyDataSetChanged();
+                if(dataSnapshot.exists()){
+                    mProgressBar.setVisibility(View.VISIBLE);
+                    String user_id = (String) dataSnapshot.getKey();
+                    sDatabaseReference.child("Users").child(user_id).addListenerForSingleValueEvent(new ValueEventListener() {
+                        @Override
+                        public void onDataChange(@NonNull DataSnapshot dataSnapshot) {
+                            if (dataSnapshot.exists()) {
+                                UserInstance userInstance = dataSnapshot.getValue(UserInstance.class);
+                                mRequests.add(userInstance);
+                                mRequestsRecyclerAdapter.notifyDataSetChanged();
+                            }
+                            else{
+                                mDatabaseReference.child(PATH_REQUESTS).child(mFirebaseAuth.getUid()).child(dataSnapshot.getKey()).removeValue();
+                            }
+                        }
+
+
+                        @Override
+                        public void onCancelled(@NonNull DatabaseError databaseError) {
+
+                        }
+                    });
+                }
             }
 
 
@@ -440,7 +491,7 @@ public class FrontActivity extends AppCompatActivity
             @Override
             public void onChildRemoved(@NonNull DataSnapshot dataSnapshot) {
                 final String user_id = (String) dataSnapshot.getKey();
-                mRequests.remove(user_id);
+                deleteFromList(user_id,mRequests);
                 mRequestsRecyclerAdapter.notifyDataSetChanged();
             }
 
@@ -457,7 +508,7 @@ public class FrontActivity extends AppCompatActivity
         mDatabaseReference.child(PATH_REQUESTS).child(mFirebaseAuth.getUid()).addValueEventListener(new ValueEventListener() {
             @Override
             public void onDataChange(@NonNull DataSnapshot dataSnapshot) {
-                mProgressBar.setVisibility(View.GONE);
+                mProgressBar.setVisibility(View.INVISIBLE);
             }
 
             @Override
@@ -469,122 +520,55 @@ public class FrontActivity extends AppCompatActivity
 
     private void initializeProfileAdapter(){
         mProfiles = new ArrayList<>();
-        mProfilesAdapter = new ArrayAdapter(this,android.R.layout.simple_list_item_1, mProfiles);
-        mProfilesListener = new AdapterView.OnItemClickListener() {
+        mProfilesAdapter = new UsersRecyclerAdapter(mProfiles,this);
+        sDatabaseReference.child("Users").addChildEventListener(new ChildEventListener() {
             @Override
-            public void onItemClick(AdapterView<?> adapterView, View view, int i, long l) {
-                cnt = 0;
-                Intent intent = new Intent(getApplicationContext(), UserProfileActivity.class);
-                intent.putExtra(USER_ID, mProfiles.get(i).getUId());
-                searchState(mProfiles.get(i).getUId(),intent);
+            public void onChildAdded(@NonNull DataSnapshot dataSnapshot, @Nullable String s) {
+                if(dataSnapshot.exists()) {
+                    mProgressBar.setVisibility(View.VISIBLE);
+                    UserInstance userInstance = dataSnapshot.getValue(UserInstance.class);
+                    if(userInstance.getNumber() != null && mContacts.contains(userInstance.getNumber()))
+                        mProfiles.add(0,userInstance);
+                    else
+                        mProfiles.add(userInstance);
+                    mProfilesAdapter.notifyDataSetChanged();
+                }
             }
-        };
+
+            @Override
+            public void onChildChanged(@NonNull DataSnapshot dataSnapshot, @Nullable String s) {
+
+            }
+
+            @Override
+            public void onChildRemoved(@NonNull DataSnapshot dataSnapshot) {
+                String id =(String) dataSnapshot.getKey();
+                deleteFromList(id,mProfiles);
+                mProfilesAdapter.notifyDataSetChanged();
+            }
+
+            @Override
+            public void onChildMoved(@NonNull DataSnapshot dataSnapshot, @Nullable String s) {
+
+            }
+
+            @Override
+            public void onCancelled(@NonNull DatabaseError databaseError) {
+
+            }
+        });
+        sDatabaseReference.child("Users").addValueEventListener(new ValueEventListener() {
+            @Override
+            public void onDataChange(@NonNull DataSnapshot dataSnapshot) {
+                mProgressBar.setVisibility(View.INVISIBLE);
+            }
+
+            @Override
+            public void onCancelled(@NonNull DatabaseError databaseError) {
+
+            }
+        });
     }
-
-    private void searchState(final String userId,final Intent intent) {
-        mDatabaseReference.child(PATH_FRIENDS).child(mFirebaseAuth.getUid()).addListenerForSingleValueEvent(new ValueEventListener() {
-            @Override
-            public void onDataChange(@NonNull DataSnapshot dataSnapshot) {
-                if(dataSnapshot.child(userId).exists())
-                    mResult = FRIENDS_ID;
-                cnt++;
-                if(cnt == CHECKS) {
-                    intent.putExtra(STATE, mResult);
-                    startActivity(intent);
-                }
-
-            }
-
-            @Override
-            public void onCancelled(@NonNull DatabaseError databaseError) {
-
-            }
-        });
-
-        mDatabaseReference.child(PATH_REQUESTS).child(mFirebaseAuth.getUid()).addListenerForSingleValueEvent(new ValueEventListener() {
-            @Override
-            public void onDataChange(@NonNull DataSnapshot dataSnapshot) {
-                if(dataSnapshot.child(userId).exists())
-                    mResult = REQUEST_ID;
-                cnt++;
-                if(cnt == CHECKS) {
-                    intent.putExtra(STATE, mResult);
-                    startActivity(intent);
-                }
-            }
-
-            @Override
-            public void onCancelled(@NonNull DatabaseError databaseError) {
-
-            }
-        });
-
-        mDatabaseReference.child(PATH_REQUESTS).child(userId).addListenerForSingleValueEvent(new ValueEventListener() {
-            @Override
-            public void onDataChange(@NonNull DataSnapshot dataSnapshot) {
-                if(dataSnapshot.child(mFirebaseAuth.getUid()).exists())
-                    mResult = PENDING_ID;
-                cnt++;
-                if(cnt == CHECKS) {
-                    intent.putExtra(STATE, mResult);
-                    startActivity(intent);
-                }
-            }
-
-            @Override
-            public void onCancelled(@NonNull DatabaseError databaseError) {
-
-            }
-        });
-
-        mDatabaseReference.child(BLOCKED_USERS).child(mFirebaseAuth.getUid()).addListenerForSingleValueEvent(new ValueEventListener() {
-            @Override
-            public void onDataChange(@NonNull DataSnapshot dataSnapshot) {
-                if(dataSnapshot.child(userId).exists()) {
-                    mResult = BLOCKING_ID;
-                }
-                cnt++;
-                if(cnt == CHECKS) {
-                    intent.putExtra(STATE, mResult);
-                    startActivity(intent);
-                }
-            }
-
-            @Override
-            public void onCancelled(@NonNull DatabaseError databaseError) {
-
-            }
-        });
-
-        mDatabaseReference.child(BLOCKED_USERS).child(userId).addListenerForSingleValueEvent(new ValueEventListener() {
-            @Override
-            public void onDataChange(@NonNull DataSnapshot dataSnapshot) {
-                if(dataSnapshot.child(mFirebaseAuth.getUid()).exists()) {
-                    mResult = BLOCKED_ID;
-                }
-                cnt++;
-                if(cnt == CHECKS) {
-                    intent.putExtra(STATE, mResult);
-                    startActivity(intent);
-                }
-            }
-
-            @Override
-            public void onCancelled(@NonNull DatabaseError databaseError) {
-
-            }
-        });
-
-
-
-        mResult = NOT_FRIENDS_ID;
-        cnt++;
-        if(cnt == CHECKS) {
-            intent.putExtra(STATE, mResult);
-            startActivity(intent);
-        }
-    }
-
 
     @Override
     public boolean onNavigationItemSelected(@NonNull MenuItem item) {
@@ -593,75 +577,207 @@ public class FrontActivity extends AppCompatActivity
             showChats();
         }else if(id == R.id.nav_friends){
             showFriends();
-            mSearchEditText.setVisibility(View.VISIBLE);
         }else if(id == R.id.nav_search_profiles){
-             showProfiles();
-         }else if(id == R.id.nav_requests){
-              showRequests();
-              mSearchEditText.setVisibility(View.INVISIBLE);
-      } else if(id == R.id.nav_profile){
-            Intent intent = new Intent(this,UserProfileActivity.class);
-            intent.putExtra(USER_ID,mFirebaseAuth.getUid());
-            intent.putExtra(STATE,USER_PROFILE_ID);
-            startActivity(intent);
+            showProfiles();
+        }else if(id == R.id.nav_requests){
+            showRequests();
+        }else if(id == R.id.nav_search_profiles){
+            showProfiles();
+        }else if(id == R.id.nav_delete_account){
+            mFirebaseAuth.getCurrentUser().delete().addOnCompleteListener(new OnCompleteListener<Void>() {
+                @Override
+                public void onComplete(@NonNull Task<Void> task) {
+                    finish();
+                    Intent intent = new Intent(getBaseContext(),LoginActivity.class);
+                    Toast.makeText(getBaseContext(),"Account deleted! Good bye!",Toast.LENGTH_SHORT).show();
+                }
+            });
+        }else if(id == R.id.nav_logout){
+            mFirebaseAuth.signOut();
+            finish();
+            Intent intent = new Intent(getBaseContext(),LoginActivity.class);
+            Toast.makeText(getBaseContext(),"Signed out!",Toast.LENGTH_SHORT).show();
         }
         DrawerLayout drawer = (DrawerLayout) findViewById(R.id.drawer_layout);
         drawer.closeDrawer(GravityCompat.START);
-       // item.setChecked(true);
+        // item.setChecked(true);
         return true;
     }
 
     private void showFriends() {
+        if(!friendsInitialized) {
+            friendsInitialized = true;
+            initializeFriendsAdapter();
+        }
+        mSearchEditText.setVisibility(View.VISIBLE);
         mFront_list.setLayoutManager(mFriendsLayoutManager);
         mFront_list.setAdapter(mFriendsRecyclerAdapter);
     }
 
     private void showChats() {
-
-        listView.setAdapter(mChatsAdapter);
-        listView.setOnItemClickListener(mChatsListner);
-
+        if(!chatInitialized){
+            chatInitialized = true;
+            initializeChatAdapter();
+        }
+        mSearchEditText.setVisibility(View.INVISIBLE);
+        mFront_list.setAdapter(chatAdapter);
+        mFront_list.setLayoutManager(linearLayoutManager);
     }
-    private void showRequests() {
 
-       mFront_list.setLayoutManager(mRequestsManager);
-       mFront_list.setAdapter(mRequestsRecyclerAdapter);
+    private void initializeChatAdapter() {
+        chatInstance = new ChatInstance();
+        chatAdapter = new ChatAdapter(chatInstanceList,this);
+        chatListRecyclerView = findViewById(R.id.chat_list);
+        linearLayoutManager = new LinearLayoutManager(this);
 
-    }
-    private void showProfiles() {
-        listView.setAdapter(mProfilesAdapter);
-        listView.setOnItemClickListener(mProfilesListener);
-        mSearchButton.setOnClickListener(new View.OnClickListener() {
+        chatListRef =FirebaseDatabase.getInstance().getReference().child("ChatsList").child(mFirebaseAuth.getUid());
+        userState = FirebaseDatabase.getInstance().getReference().child("Users").child(mFirebaseAuth.getUid());
+
+        if (mFirebaseAuth.getCurrentUser() == null){
+            startActivity(new Intent(this, LoginActivity.class));
+            finish();
+        }else{
+            userState.child("userState").setValue("online");
+
+        }
+        chatListRef.addChildEventListener(new ChildEventListener() {
             @Override
-            public void onClick(View view) {
-                final String name = mSearchEditText.getText().toString();
-                root.addListenerForSingleValueEvent(new ValueEventListener() {
-                    @Override
-                    public void onDataChange(@NonNull DataSnapshot dataSnapshot) {
-                        mProfiles.clear();
-                        Iterator<DataSnapshot> itr = dataSnapshot.getChildren().iterator();
-                        while (itr.hasNext()){
-                            dataSnapshot = itr.next();
-                            UserInstance user = dataSnapshot.getValue(UserInstance.class);
-                            if(user.getName().matches(name + "\\w*")){
-                               mProfiles.add(user);
-                               mProfilesAdapter.notifyDataSetChanged();
-                            }
-                        }
-                    }
+            public void onChildAdded(@NonNull DataSnapshot dataSnapshot, @Nullable String s) {
+                chatInstanceList.add(dataSnapshot.getValue(ChatInstance.class));
+                chatAdapter.notifyDataSetChanged();
 
-                    @Override
-                    public void onCancelled(@NonNull DatabaseError databaseError) {
+            }
 
-                    }
-                });
+            @Override
+            public void onChildChanged(@NonNull DataSnapshot dataSnapshot, @Nullable String s) {
+                ChatInstance c = dataSnapshot.getValue(ChatInstance.class);
+                for(int i =0;i<chatInstanceList.size();i++){
+                    if(c.getReceiverUID().equals(chatInstanceList.get(i).getReceiverUID()))
+                        chatInstanceList.set(i,c);
+                }
+                chatAdapter.notifyDataSetChanged();
+
+            }
+
+            @Override
+            public void onChildRemoved(@NonNull DataSnapshot dataSnapshot) {
+
+            }
+
+            @Override
+            public void onChildMoved(@NonNull DataSnapshot dataSnapshot, @Nullable String s) {
+
+            }
+
+            @Override
+            public void onCancelled(@NonNull DatabaseError databaseError) {
+
             }
         });
+    }
+
+    private void showRequests() {
+        mSearchEditText.setVisibility(View.INVISIBLE);
+        if(!requestsInitialized){
+            requestsInitialized = true;
+            initializeRequestsAdapter();
+        }
+        mFront_list.setLayoutManager(mRequestsManager);
+        mFront_list.setAdapter(mRequestsRecyclerAdapter);
+
+    }
+    private void showProfiles(){
+        mSearchEditText.setVisibility(View.VISIBLE);
+        if(!usersInitialized){
+            usersInitialized = true;
+            initializeProfileAdapter();
+        }
+        mFront_list.setLayoutManager(mFriendsLayoutManager);
+        mFront_list.setAdapter(mProfilesAdapter);
     }
 
 
     @Override
     protected void onResume() {
         super.onResume();
+    }
+
+    @Override
+    public boolean onOptionsItemSelected(@NonNull MenuItem item) {
+        int id = item.getItemId();
+        if(id == R.id.action_profile){
+            Intent intent = new Intent(this, UserProfileActivity.class);
+            intent.putExtra(USER_ID,mFirebaseAuth.getUid());
+            intent.putExtra(STATE,USER_PROFILE_ID);
+            startActivity(intent);
+        }
+        return super.onOptionsItemSelected(item);
+    }
+
+
+    @Override
+    public void onRequestPermissionsResult(int requestCode, String[] permissions,
+                                           int[] grantResults) {
+        if (requestCode == PERMISSIONS_REQUEST_READ_CONTACTS) {
+            if (grantResults[0] == PackageManager.PERMISSION_GRANTED) {
+                // Permission is granted
+                showContacts();
+            } else {
+                Toast.makeText(this, "Until you grant the permission, we canot display the names", Toast.LENGTH_SHORT).show();
+            }
+        }
+    }
+
+
+    private void showContacts() {
+        // Check the SDK version and whether the permission is already granted or not.
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M && checkSelfPermission(Manifest.permission.READ_CONTACTS) != PackageManager.PERMISSION_GRANTED) {
+            requestPermissions(new String[]{Manifest.permission.READ_CONTACTS}, PERMISSIONS_REQUEST_READ_CONTACTS);
+            //After this point you wait for callback in onRequestPermissionsResult(int, String[], int[]) overriden method
+        } else {
+            // Android version is lesser than 6.0 or the permission is already granted.
+            //  mContacts = getContactNames();
+            getLoaderManager().initLoader(0,null,this);
+        }
+
+    }
+
+
+    @Override
+    public Loader<Cursor> onCreateLoader(int i, Bundle bundle) {
+        if(i == 0) {
+            return new CursorLoader(this, ContactsContract.Contacts.CONTENT_URI, null,
+                    null, null, null);
+        }
+        return null;
+    }
+
+    @Override
+    public void onLoadFinished(Loader<Cursor> loader, Cursor cursor) {
+        this.mCursor = cursor;
+        if (mCursor.getCount() > 0) {
+            while (mCursor.moveToNext()) {
+                String id = mCursor.getString(mCursor.getColumnIndex(ContactsContract.Contacts._ID));
+                String name = mCursor.getString(mCursor.getColumnIndex(ContactsContract.Contacts.DISPLAY_NAME));
+                Log.i("Names", name);
+                if (Integer.parseInt(mCursor.getString(mCursor.getColumnIndex(ContactsContract.Contacts.HAS_PHONE_NUMBER))) > 0)
+                {
+                    // Query phone here. Covered next
+                    Cursor phones = getContentResolver().query(ContactsContract.CommonDataKinds.Phone.CONTENT_URI,null,ContactsContract.CommonDataKinds.Phone.CONTACT_ID +" = "+ id,null, null);
+                    while (phones.moveToNext()) {
+                        String phoneNumber = phones.getString(phones.getColumnIndex(ContactsContract.CommonDataKinds.Phone.NUMBER));
+                        mContacts.add(phoneNumber);
+                    }
+                    phones.close();
+                }
+
+            }
+        }
+    }
+
+    @Override
+    public void onLoaderReset(Loader<Cursor> loader) {
+        mCursor.close();
+
     }
 }

@@ -13,7 +13,7 @@
         android:theme="@style/AppTheme">
 
         <service
-            android:name=".UploadPhotoService"
+            android:name=".services.UploadPhotoService"
             android:exported="false" />
 
         <activity
@@ -26,13 +26,13 @@
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
         </activity>
-        <activity android:name=".UserProfileActivity" />
-        <activity android:name=".ChatActivity" />
-        <activity android:name=".ProfileActivity" />
-        <activity android:name=".RegisterActivity" />
-        <activity android:name=".LoginActivity" />
+        <activity android:name=".user.UserProfileActivity" />
+        <activity android:name=".chats.ChatActivity" />
+        <activity android:name=".user.ProfileActivity" />
+        <activity android:name=".login.RegisterActivity" />
+        <activity android:name=".login.LoginActivity" />
         <service
-            android:name=".MyFirebaseMessagingService"
+            android:name=".services.MyFirebaseMessagingService"
             android:permission="com.google.android.c2dm.permission.SEND">
             <intent-filter>
                 <action android:name="com.google.firebase.MESSAGING_EVENT" />
@@ -40,7 +40,7 @@
             </intent-filter>
         </service>
         <service
-            android:name=".MyFirebaseInstanceIDService">
+            android:name=".services.MyFirebaseInstanceIDService">
             <intent-filter>
                 <action android:name="com.google.firebase.INSTANCE_ID_EVENT" />
             </intent-filter>

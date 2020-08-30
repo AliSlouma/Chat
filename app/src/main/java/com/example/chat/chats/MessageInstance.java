@@ -1,4 +1,4 @@
-package com.example.chat;
+package com.example.chat.chats;
 
 public class MessageInstance {
     private String mMessage;

@@ -1,4 +1,4 @@
-package com.example.chat;
+package com.example.chat.user;
 
 import androidx.annotation.NonNull;
 
@@ -8,7 +8,17 @@ public class UserInstance {
     private String mName;
     private String mStatus;
     private String mImageUri;
+    private String userState;
 
+    public String getNumber() {
+        return mNumber;
+    }
+
+    public void setNumber(String number) {
+        mNumber = number;
+    }
+
+    private String mNumber;
     public String getImageUri() {
         return mImageUri;
     }
@@ -18,12 +28,21 @@ public class UserInstance {
     }
 
     public UserInstance(){}
-    public UserInstance(String UId, String e_mail, String name, String status,String uri) {
+    public UserInstance(String UId, String e_mail, String name, String status,String uri , String userState) {
         mUId = UId;
         mE_mail = e_mail;
         mName = name;
         mStatus = status;
         mImageUri = uri;
+        this.userState = userState;
+    }
+
+    public String getUserState() {
+        return userState;
+    }
+
+    public void setUserState(String userState) {
+        this.userState = userState;
     }
 
     @NonNull

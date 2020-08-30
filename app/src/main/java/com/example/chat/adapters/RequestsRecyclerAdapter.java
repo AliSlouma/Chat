@@ -1,4 +1,4 @@
-package com.example.chat;
+package com.example.chat.adapters;
 
 import android.content.Context;
 import android.content.Intent;
@@ -13,21 +13,24 @@ import androidx.annotation.NonNull;
 import androidx.recyclerview.widget.RecyclerView;
 
 import com.bumptech.glide.Glide;
+import com.example.chat.FrontActivity;
+import com.example.chat.R;
+import com.example.chat.user.UserInstance;
+import com.example.chat.user.UserProfileActivity;
 import com.google.firebase.database.DataSnapshot;
 import com.google.firebase.database.DatabaseError;
 import com.google.firebase.database.ValueEventListener;
 
-import java.util.ArrayList;
 import java.util.List;
 
 import static com.example.chat.FirebaseUtil.*;
 
 public class RequestsRecyclerAdapter extends RecyclerView.Adapter<RequestsRecyclerAdapter.RequestViewHolder>{
-    List<String> mRequests;
+    List<UserInstance> mRequests;
     Context mContext;
 
 
-    public RequestsRecyclerAdapter(List<String> requests, Context context){
+    public RequestsRecyclerAdapter(List<UserInstance> requests, Context context){
         this.mContext = context;
         this.mRequests = requests;
     }
@@ -40,23 +43,11 @@ public class RequestsRecyclerAdapter extends RecyclerView.Adapter<RequestsRecycl
 
     @Override
     public void onBindViewHolder(@NonNull final RequestViewHolder holder, int position) {
-        String User_id = mRequests.get(position);
-        sDatabaseReference.child("Users").child(User_id).addListenerForSingleValueEvent(new ValueEventListener() {
-            @Override
-            public void onDataChange(@NonNull DataSnapshot dataSnapshot) {
-                UserInstance userInstance = dataSnapshot.getValue(UserInstance.class);
-                holder.name.setText(userInstance.getName());
-                holder.status.setText(userInstance.getStatus());
-                Glide.with(mContext).load(userInstance.getImageUri()).into(holder.image);
-                holder.user_id = userInstance.getUId();
-            }
-
-            @Override
-            public void onCancelled(@NonNull DatabaseError databaseError) {
-
-            }
-        });
-
+        UserInstance userInstance = mRequests.get(position);
+        holder.name.setText(userInstance.getName());
+        holder.status.setText(userInstance.getStatus());
+        Glide.with(mContext).load(userInstance.getImageUri()).into(holder.image);
+        holder.user_id = userInstance.getUId();
     }
 
     @Override
@@ -81,10 +72,25 @@ public class RequestsRecyclerAdapter extends RecyclerView.Adapter<RequestsRecycl
             itemView.setOnClickListener(new View.OnClickListener() {
                 @Override
                 public void onClick(View view) {
-                    Intent intent = new Intent(mContext , UserProfileActivity.class);
-                    intent.putExtra(FrontActivity.USER_ID, user_id);
-                    intent.putExtra(FrontActivity.STATE,FrontActivity.REQUEST_ID);
-                    mContext.startActivity(intent);
+                    sDatabaseReference.child("Users").child(user_id).addListenerForSingleValueEvent(new ValueEventListener() {
+                        @Override
+                        public void onDataChange(@NonNull DataSnapshot dataSnapshot) {
+                            if(dataSnapshot.exists()){
+                                Intent intent = new Intent(mContext , UserProfileActivity.class);
+                                intent.putExtra(FrontActivity.USER_ID, user_id);
+                                intent.putExtra(FrontActivity.STATE,FrontActivity.REQUEST_ID);
+                                mContext.startActivity(intent);
+                            }else{
+                                deleteRequest(user_id);
+                            }
+                        }
+
+                        @Override
+                        public void onCancelled(@NonNull DatabaseError databaseError) {
+
+                        }
+                    });
+
                 }
             });
             acceptBtn.setOnClickListener(new View.OnClickListener() {
@@ -102,5 +108,15 @@ public class RequestsRecyclerAdapter extends RecyclerView.Adapter<RequestsRecycl
                 }
             });
         }
+    }
+
+    private void deleteRequest(String user_id) {
+        for(int i=0 ; i<mRequests.size() ; i++){
+            if(mRequests.get(i).getUId().equals(user_id)) {
+                mRequests.remove(i);
+                break;
+            }
+        }
+        notifyDataSetChanged();
     }
 }

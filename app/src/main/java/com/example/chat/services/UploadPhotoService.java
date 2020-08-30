@@ -1,14 +1,14 @@
-package com.example.chat;
+package com.example.chat.services;
 
 import android.app.IntentService;
 import android.content.Intent;
-import android.content.Context;
 import android.net.Uri;
 import android.util.Log;
 
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 
+import com.example.chat.user.UserInstance;
 import com.google.android.gms.tasks.Continuation;
 import com.google.android.gms.tasks.OnCompleteListener;
 import com.google.android.gms.tasks.Task;
@@ -18,8 +18,6 @@ import com.google.firebase.database.ValueEventListener;
 import com.google.firebase.storage.FirebaseStorage;
 import com.google.firebase.storage.StorageReference;
 import com.google.firebase.storage.UploadTask;
-
-import java.net.URI;
 
 import static com.example.chat.FirebaseUtil.sDatabaseReference;
 

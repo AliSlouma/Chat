@@ -1,4 +1,4 @@
-package com.example.chat;
+package com.example.chat.chats;
 
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
@@ -6,23 +6,18 @@ import androidx.appcompat.app.AppCompatActivity;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 
-import android.app.Instrumentation;
 import android.content.Intent;
-import android.media.Image;
 import android.net.Uri;
 import android.os.Bundle;
 import android.text.TextUtils;
-import android.util.Log;
 import android.view.View;
 import android.widget.EditText;
 import android.widget.ImageView;
-import android.widget.ScrollView;
-import android.widget.TextView;
-import android.widget.Toast;
 
+import com.example.chat.login.LoginActivity;
+import com.example.chat.R;
 import com.google.android.gms.tasks.Continuation;
 import com.google.android.gms.tasks.OnCompleteListener;
-import com.google.android.gms.tasks.OnSuccessListener;
 import com.google.android.gms.tasks.Task;
 import com.google.firebase.auth.FirebaseAuth;
 import com.google.firebase.database.ChildEventListener;
@@ -38,27 +33,26 @@ import com.google.firebase.storage.UploadTask;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Calendar;
-import java.util.HashMap;
-import java.util.Iterator;
 import java.util.List;
-
-import static com.example.chat.FirebaseUtil.sDatabaseReference;
 
 public class ChatActivity extends AppCompatActivity {
 
     FirebaseAuth firebaseAuth;
-    DatabaseReference messageKeyRef , messageRef , userRef ,receRef;
+    DatabaseReference messageKeyRef , messageRef , userRef ,receRef ,seenRef;
     EditText sendMessageEditText;
     MessageInstance messageInstance;
     String receiverID;
     String senderID;
     RecyclerView chatRecyclerView;
     LinearLayoutManager linearLayoutManager;
-    private  MessageAdapter messageAdapter;
+    private MessageAdapter messageAdapter;
     private final List<MessageInstance> messageInstanceList = new ArrayList<>();
     public static final int galleryConstant = 5;
     StorageReference storageReference;
     ImageView imageView;
+    String receiverName;
+    String receiverPhoto;
+    DatabaseReference userState;
 
 
 
@@ -67,21 +61,43 @@ public class ChatActivity extends AppCompatActivity {
 
         String getMessage = sendMessageEditText.getText().toString();
         if(!TextUtils.isEmpty(getMessage)){
+            compareTheTwoIDS(senderID, receiverID , "messagesContent");
             String key = messageKeyRef.push().getKey();
             messageRef = messageKeyRef.child(key);
             messageInstance.setMessage(getMessage);
             messageInstance.setmType("text");
             messageRef.setValue(messageInstance);
             sendMessageEditText.setText("");
+
+
+            ChatInstance chatInstance = new ChatInstance();
+            chatInstance.setLastMessage(getMessage);
+            chatInstance.setReceiverUID(receiverID);
+            chatInstance.setReceiver(receiverName);
+            chatInstance.setFriendPhoto(receiverPhoto);
+            chatInstance.setTime(messageInstance.getTime());
+            chatInstance.setSeen(true);
+            DatabaseReference ref = FirebaseDatabase.getInstance().getReference().child("ChatsList").child(senderID).child(receiverID);
+            ref.setValue(chatInstance);
+
+
+            ChatInstance chatInstance2 = new ChatInstance();
+            chatInstance2.setLastMessage(getMessage);
+            chatInstance2.setReceiverUID(senderID);
+            chatInstance2.setReceiver(messageInstance.getSender());
+            chatInstance2.setFriendPhoto(messageInstance.getmReceiverPhoto());
+            chatInstance2.setTime(messageInstance.getTime());
+            chatInstance2.setSeen(false);
+            DatabaseReference ref2 = FirebaseDatabase.getInstance().getReference().child("ChatsList").child(receiverID).child(senderID);
+            ref2.setValue(chatInstance2);
+
         }
 
 
 
     }
-    public void uploadPhoto(View view){
 
 
-    }
 
     @Override
     protected void onActivityResult(int requestCode, int resultCode, @Nullable Intent data) {
@@ -93,8 +109,8 @@ public class ChatActivity extends AppCompatActivity {
 
             final StorageReference file = storageReference.child(s);
 
-             UploadTask uploadTask = file.putFile(uri);
-             uploadTask.continueWithTask(new Continuation<UploadTask.TaskSnapshot, Task<Uri>>() {
+            UploadTask uploadTask = file.putFile(uri);
+            uploadTask.continueWithTask(new Continuation<UploadTask.TaskSnapshot, Task<Uri>>() {
                 @Override
                 public Task<Uri> then(@NonNull Task<UploadTask.TaskSnapshot> task) throws Exception {
                     if (!task.isSuccessful()) {
@@ -134,10 +150,22 @@ public class ChatActivity extends AppCompatActivity {
 
     }
 
-    @Override
+
     protected void onStart() {
         super.onStart();
+        if (firebaseAuth.getCurrentUser() == null){
+            startActivity(new Intent(this, LoginActivity.class));
+            finish();
+        }  else{
+            userState.child("userState").setValue("online");
+
+
+        }
+
+
     }
+
+
 
 
 
@@ -150,10 +178,10 @@ public class ChatActivity extends AppCompatActivity {
 
         firebaseAuth = FirebaseAuth.getInstance();
         senderID = firebaseAuth.getUid();
-        compareTheTwoIDS(senderID, receiverID);
+        compareTheTwoIDS(senderID, receiverID , "messagesContent");
 
 
-        userRef = FirebaseDatabase.getInstance().getReference().child("Users").child(firebaseAuth.getUid());
+        userRef = FirebaseDatabase.getInstance().getReference().child("Users").child(senderID);
         receRef = FirebaseDatabase.getInstance().getReference().child("Users").child(receiverID);
 
         getReceiverPhoto();
@@ -163,13 +191,17 @@ public class ChatActivity extends AppCompatActivity {
         messageInstance.setmSenderID(senderID);
         setTimeInformation();
         getUserName();
+        getReceiverName();
+        getSenderPhoto();
         messageAdapter = new MessageAdapter(messageInstanceList,this);
         chatRecyclerView = findViewById(R.id.recycle);
         linearLayoutManager = new LinearLayoutManager(this);
         chatRecyclerView.setLayoutManager(linearLayoutManager);
         chatRecyclerView.setAdapter(messageAdapter);
-        chatRecyclerView.scrollToPosition(View.FOCUS_DOWN);
 
+        seenRef = FirebaseDatabase.getInstance().getReference().child("ChatsList").child(senderID).child(receiverID);
+
+        setSeen();
         storageReference = FirebaseStorage.getInstance().getReference().child("Chat Messages");
         imageView = findViewById(R.id.galary);
 
@@ -186,8 +218,10 @@ public class ChatActivity extends AppCompatActivity {
         messageKeyRef.addChildEventListener(new ChildEventListener() {
             @Override
             public void onChildAdded(@NonNull DataSnapshot dataSnapshot, @Nullable String s) {
+                MessageInstance message = dataSnapshot.getValue(MessageInstance.class);
+                //  if(!message.isSeen())
+
                 messageInstanceList.add(dataSnapshot.getValue(MessageInstance.class));
-                Log.i("hi" ,"11111111111111");
                 messageAdapter.notifyDataSetChanged();
                 chatRecyclerView.smoothScrollToPosition(chatRecyclerView.getAdapter().getItemCount());
             }
@@ -212,10 +246,34 @@ public class ChatActivity extends AppCompatActivity {
 
             }
         });
+
+
+        userState = FirebaseDatabase.getInstance().getReference().child("Users").child(firebaseAuth.getUid());
+
     }
 
+    private void setSeen() {
+        //   DatabaseReference ref = FirebaseDatabase.getInstance().getReference().child("ChatList").child(receiverID);
+        seenRef.addListenerForSingleValueEvent(new ValueEventListener() {
+            @Override
+            public void onDataChange(@NonNull DataSnapshot dataSnapshot) {
+
+
+                ChatInstance instance = dataSnapshot.getValue(ChatInstance.class);
+                instance.setSeen(true);
+                seenRef.setValue(instance);
+            }
+
+            @Override
+            public void onCancelled(@NonNull DatabaseError databaseError) {
+
+            }
+        });
+    }
+
+
     private void getReceiverPhoto() {
-        receRef.addValueEventListener(new ValueEventListener() {
+        userRef.addValueEventListener(new ValueEventListener() {
             @Override
             public void onDataChange(@NonNull DataSnapshot dataSnapshot) {
                 if(dataSnapshot.child("imageUri").exists())
@@ -229,6 +287,39 @@ public class ChatActivity extends AppCompatActivity {
         });
     }
 
+
+    private void getSenderPhoto() {
+        receRef.addValueEventListener(new ValueEventListener() {
+            @Override
+            public void onDataChange(@NonNull DataSnapshot dataSnapshot) {
+                if(dataSnapshot.child("imageUri").exists())
+                    receiverPhoto = (String) dataSnapshot.child("imageUri").getValue();
+            }
+
+            @Override
+            public void onCancelled(@NonNull DatabaseError databaseError) {
+
+            }
+        });
+    }
+
+
+    private void getReceiverName() {
+        receRef.addValueEventListener(new ValueEventListener() {
+            @Override
+            public void onDataChange(@NonNull DataSnapshot dataSnapshot) {
+                if(dataSnapshot.child("name").exists()){
+                    String name = dataSnapshot.child("name").getValue().toString();
+                    receiverName = name;
+                }
+            }
+
+            @Override
+            public void onCancelled(@NonNull DatabaseError databaseError) {
+
+            }
+        });
+    }
     private void getUserName() {
         userRef.addValueEventListener(new ValueEventListener() {
             @Override
@@ -246,10 +337,10 @@ public class ChatActivity extends AppCompatActivity {
         });
     }
 
-    private void compareTheTwoIDS(String uid, String receiverID) {
+    private void compareTheTwoIDS(String uid, String receiverID , String place) {
         if(uid.compareTo(receiverID) >=0){
-            messageKeyRef = FirebaseDatabase.getInstance().getReference().child("messagesContent").child(uid+receiverID);
+            messageKeyRef = FirebaseDatabase.getInstance().getReference().child(place).child(uid+receiverID);
         }else
-            messageKeyRef = FirebaseDatabase.getInstance().getReference().child("messagesContent").child(receiverID+uid);
+            messageKeyRef = FirebaseDatabase.getInstance().getReference().child(place).child(receiverID+uid);
     }
 }

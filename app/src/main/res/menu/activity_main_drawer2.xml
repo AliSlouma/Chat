@@ -23,12 +23,12 @@
     <item android:title="Communicate">
         <menu>
             <item
-                android:id="@+id/nav_share"
+                android:id="@+id/nav_logout"
 
-                android:title="Share"/>
+                android:title="Log out" />
             <item
-                android:id="@+id/nav_send"
-                android:title="Send"/>
+                android:id="@+id/nav_delete_account"
+                android:title="Delete account" />
         </menu>
     </item>
 

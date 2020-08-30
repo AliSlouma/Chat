@@ -5,46 +5,54 @@
     android:id="@+id/constarint"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    tools:context=".ChatActivity">
+    tools:context=".chats.ChatActivity">
 
-    <LinearLayout
+    <androidx.constraintlayout.widget.ConstraintLayout
         android:id="@+id/linearLayout"
         android:layout_width="0dp"
         android:layout_height="55dp"
-        android:orientation="horizontal"
         app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent">
-        <ImageView
-            android:background="@drawable/galary"
-            android:id="@+id/galary"
-            android:layout_width="30dp"
-            android:layout_height="53dp"
-            android:layout_marginBottom="10dp"
-            android:layout_weight="1"
 
-           />
+        <ImageView
+            android:id="@+id/galary"
+            android:layout_width="38dp"
+            android:layout_height="47dp"
+            android:layout_weight="1"
+            android:background="@drawable/galary"
+
+            app:layout_constraintBottom_toBottomOf="parent"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintTop_toTopOf="parent" />
+
         <EditText
             android:id="@+id/sendMessageEditView"
-            android:layout_width="312dp"
-            android:layout_height="50dp"
+            android:layout_width="0dp"
+            android:layout_height="39dp"
             android:layout_weight="1"
+            android:background="@drawable/edit_text_shape"
             android:ems="10"
             android:hint="Send a message"
-            android:background="@drawable/edit_text_shape"
-            android:inputType="textMultiLine" />
+            android:inputType="textMultiLine"
+            app:layout_constraintBottom_toBottomOf="parent"
+            app:layout_constraintEnd_toStartOf="@+id/sendButton"
+            app:layout_constraintStart_toEndOf="@+id/galary"
+            app:layout_constraintTop_toTopOf="parent" />
 
         <ImageView
-            android:background="@drawable/sendbutton"
             android:id="@+id/sendButton"
-            android:clickable="true"
             android:layout_width="30dp"
             android:layout_height="50dp"
             android:layout_weight="1"
+            android:background="@drawable/sendbutton"
+            android:clickable="true"
             android:onClick="sendButton"
-             />
+            app:layout_constraintBottom_toBottomOf="parent"
+            app:layout_constraintEnd_toEndOf="parent"
+            app:layout_constraintTop_toTopOf="parent" />
 
-    </LinearLayout>
+    </androidx.constraintlayout.widget.ConstraintLayout>
 
     <androidx.recyclerview.widget.RecyclerView
         android:id="@+id/recycle"
@@ -54,7 +62,6 @@
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintHorizontal_bias="0.0"
         app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toTopOf="parent"
-        app:layout_constraintVertical_bias="0.0" />
+        app:layout_constraintTop_toTopOf="parent"></androidx.recyclerview.widget.RecyclerView>
 
 </androidx.constraintlayout.widget.ConstraintLayout>

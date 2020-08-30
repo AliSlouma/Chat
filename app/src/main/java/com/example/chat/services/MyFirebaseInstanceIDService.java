@@ -1,6 +1,7 @@
-package com.example.chat;
+package com.example.chat.services;
 import android.util.Log;
 
+import com.example.chat.FirebaseUtil;
 import com.google.firebase.iid.FirebaseInstanceId;
 import com.google.firebase.iid.FirebaseInstanceIdService;
 import com.google.firebase.messaging.FirebaseMessaging;
