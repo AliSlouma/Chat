@@ -42,7 +42,7 @@ public class RegisterActivity extends AppCompatActivity {
                         public void onComplete(@NonNull Task<AuthResult> task) {
                             if(task.isSuccessful()){
                                 root.child("Users").child(firebaseAuth.getCurrentUser().getUid());
-                                root.push().child("Chats").setValue("");
+                               // root.push().child("Chats").setValue("");
 
                                 Toast.makeText(RegisterActivity.this, "Success to Register", Toast.LENGTH_SHORT).show();
 
