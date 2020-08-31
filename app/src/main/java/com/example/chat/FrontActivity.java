@@ -681,8 +681,12 @@ public class FrontActivity extends AppCompatActivity
             public void onChildChanged(@NonNull DataSnapshot dataSnapshot, @Nullable String s) {
                 ChatInstance c = dataSnapshot.getValue(ChatInstance.class);
                 for(int i =0;i<chatInstanceList.size();i++){
-                    if(c.getReceiverUID().equals(chatInstanceList.get(i).getReceiverUID()))
-                        chatInstanceList.set(i,c);
+                    if(c.getReceiverUID().equals(chatInstanceList.get(i).getReceiverUID())){
+                       // chatInstanceList.set(i,c);
+                        chatInstanceList.remove(i);
+                        chatInstanceList.add(0,c);
+                    }
+
                 }
                 chatAdapter.notifyDataSetChanged();
 
