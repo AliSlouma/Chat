@@ -37,7 +37,10 @@ import com.example.chat.user.UserProfileActivity;
 import com.google.android.gms.tasks.OnCompleteListener;
 import com.google.android.gms.tasks.Task;
 import com.google.android.material.navigation.NavigationView;
+import com.google.firebase.auth.AuthCredential;
+import com.google.firebase.auth.EmailAuthProvider;
 import com.google.firebase.auth.FirebaseAuth;
+import com.google.firebase.auth.FirebaseUser;
 import com.google.firebase.database.ChildEventListener;
 import com.google.firebase.database.DataSnapshot;
 import com.google.firebase.database.DatabaseError;
@@ -290,7 +293,7 @@ public class FrontActivity extends AppCompatActivity
     @Override
     protected void onPause() {
         super.onPause();
-        if(!onpause){
+        if(!onpause && mFirebaseAuth.getCurrentUser() != null){
 
             Calendar calendar = Calendar.getInstance();
 
@@ -589,14 +592,34 @@ public class FrontActivity extends AppCompatActivity
         }else if(id == R.id.nav_search_profiles){
             showProfiles();
         }else if(id == R.id.nav_delete_account){
-            mFirebaseAuth.getCurrentUser().delete().addOnCompleteListener(new OnCompleteListener<Void>() {
-                @Override
-                public void onComplete(@NonNull Task<Void> task) {
-                    finish();
-                    Intent intent = new Intent(getBaseContext(),LoginActivity.class);
-                    Toast.makeText(getBaseContext(),"Account deleted! Good bye!",Toast.LENGTH_SHORT).show();
-                }
-            });
+            final FirebaseUser user = FirebaseAuth.getInstance().getCurrentUser();
+
+            // Get auth credentials from the user for re-authentication. The example below shows
+            // email and password credentials but there are multiple possible providers,
+            // such as GoogleAuthProvider or FacebookAuthProvider.
+            AuthCredential credential = EmailAuthProvider
+                    .getCredential("asdasd@gmail.com", "123456");
+
+            // Prompt the user to re-provide their sign-in credentials
+            user.reauthenticate(credential)
+                    .addOnCompleteListener(new OnCompleteListener<Void>() {
+                        @Override
+                        public void onComplete(@NonNull Task<Void> task) {
+                            user.delete()
+                                    .addOnCompleteListener(new OnCompleteListener<Void>() {
+                                        @Override
+                                        public void onComplete(@NonNull Task<Void> task) {
+                                            if (task.isSuccessful()) {
+                                                Intent intent = new Intent(getApplicationContext() , LoginActivity.class);
+                                                DatabaseReference ref = FirebaseDatabase.getInstance().getReference().child("Users").child(user.getUid());
+                                                ref.removeValue();
+                                                startActivity(intent);
+                                            }
+                                        }
+                                    });
+
+                        }
+                    });
         }else if(id == R.id.nav_logout){
             mFirebaseAuth.signOut();
             finish();

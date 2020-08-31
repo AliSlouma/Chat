@@ -74,27 +74,12 @@ public class ChatActivity extends AppCompatActivity {
             messageRef.setValue(messageInstance);
             sendMessageEditText.setText("");
 
-
-            ChatInstance chatInstance = new ChatInstance();
-            chatInstance.setLastMessage(getMessage);
-            chatInstance.setReceiverUID(receiverID);
-            chatInstance.setReceiver(receiverName);
-            chatInstance.setFriendPhoto(receiverPhoto);
-            chatInstance.setTime(messageInstance.getTime());
-            chatInstance.setSeen(true);
-            DatabaseReference ref = FirebaseDatabase.getInstance().getReference().child("ChatsList").child(senderID).child(receiverID);
-            ref.setValue(chatInstance);
+            initializedChatInstanceSender(getMessage);
+            initializedChatInstanceReceiver(getMessage);
 
 
-            ChatInstance chatInstance2 = new ChatInstance();
-            chatInstance2.setLastMessage(getMessage);
-            chatInstance2.setReceiverUID(senderID);
-            chatInstance2.setReceiver(messageInstance.getSender());
-            chatInstance2.setFriendPhoto(messageInstance.getmReceiverPhoto());
-            chatInstance2.setTime(messageInstance.getTime());
-            chatInstance2.setSeen(false);
-            DatabaseReference ref2 = FirebaseDatabase.getInstance().getReference().child("ChatsList").child(receiverID).child(senderID);
-            ref2.setValue(chatInstance2);
+
+
 
         }
 
@@ -102,6 +87,29 @@ public class ChatActivity extends AppCompatActivity {
 
     }
 
+    private void initializedChatInstanceReceiver(String getMessage) {
+        ChatInstance chatInstance2 = new ChatInstance();
+        chatInstance2.setLastMessage(getMessage);
+        chatInstance2.setReceiverUID(senderID);
+        chatInstance2.setReceiver(messageInstance.getSender());
+        chatInstance2.setFriendPhoto(messageInstance.getmReceiverPhoto());
+        chatInstance2.setTime(messageInstance.getTime());
+        chatInstance2.setSeen(false);
+        DatabaseReference ref2 = FirebaseDatabase.getInstance().getReference().child("ChatsList").child(receiverID).child(senderID);
+        ref2.setValue(chatInstance2);
+    }
+
+    private void initializedChatInstanceSender (String getMessage) {
+        ChatInstance chatInstance = new ChatInstance();
+        chatInstance.setLastMessage(getMessage);
+        chatInstance.setReceiverUID(receiverID);
+        chatInstance.setReceiver(receiverName);
+        chatInstance.setFriendPhoto(receiverPhoto);
+        chatInstance.setTime(messageInstance.getTime());
+        chatInstance.setSeen(true);
+        DatabaseReference ref = FirebaseDatabase.getInstance().getReference().child("ChatsList").child(senderID).child(receiverID);
+        ref.setValue(chatInstance);
+    }
 
 
     @Override
@@ -135,6 +143,9 @@ public class ChatActivity extends AppCompatActivity {
                         String key = messageKeyRef.push().getKey();
                         messageRef = messageKeyRef.child(key);
                         messageRef.setValue(messageInstance);
+
+                        initializedChatInstanceSender("Sent a photo");
+                        initializedChatInstanceReceiver("sent a photo");
 
 
                     }
@@ -226,7 +237,6 @@ public class ChatActivity extends AppCompatActivity {
             @Override
             public void onChildAdded(@NonNull DataSnapshot dataSnapshot, @Nullable String s) {
                 MessageInstance message = dataSnapshot.getValue(MessageInstance.class);
-                //  if(!message.isSeen())
 
                 messageInstanceList.add(dataSnapshot.getValue(MessageInstance.class));
                 messageAdapter.notifyDataSetChanged();

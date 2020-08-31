@@ -81,20 +81,32 @@ public class MessageAdapter extends RecyclerView.Adapter<MessageAdapter.MessageV
 
             if (senderID1.equals(senderID2)) {
                 RequestOptions requestOptions = new RequestOptions();
-                requestOptions.placeholder(R.drawable.profilepic);
+                requestOptions.placeholder(R.drawable.whiteimage);
 
                 Glide.with(context)
                         .setDefaultRequestOptions(requestOptions)
+                        .applyDefaultRequestOptions(  new RequestOptions().override(200, 200))
                         .load(messageInstance.getmChatPhoto()).into(holder.senderSendedPhoto);
                 holder.senderSendedPhoto.setVisibility(View.VISIBLE);
             }else{
                 RequestOptions requestOptions = new RequestOptions();
-                requestOptions.placeholder(R.drawable.profilepic);
+                requestOptions.placeholder(R.drawable.whiteimage);
 
                 Glide.with(context)
                         .setDefaultRequestOptions(requestOptions)
+                        .applyDefaultRequestOptions(  new RequestOptions().override(200, 200))
                         .load(messageInstance.getmChatPhoto()).into(holder.receiverSendedphoto);
                 holder.receiverSendedphoto.setVisibility(View.VISIBLE);
+
+
+                Glide.with(context)
+                        .applyDefaultRequestOptions(new RequestOptions().placeholder(R.drawable.profilepic))
+                        .setDefaultRequestOptions(requestOptions)
+                        .load(uri).into(holder.receiverPhoto);
+
+
+                holder.receiverPhoto.setVisibility(View.VISIBLE);
+
             }
 
 
@@ -103,11 +115,9 @@ public class MessageAdapter extends RecyclerView.Adapter<MessageAdapter.MessageV
             if (senderID1.equals(senderID2)) {
                 holder.senderMessage.setText(message);
                 holder.senderMessage.setVisibility(View.VISIBLE);
-                //holder.sent_seen.setVisibility(View.VISIBLE);
 
 
             } else {
-                //    holder.sent_seen.setText("seen");
                 holder.receiverMessage.setText(message);
                 holder.receiverMessage.setVisibility(View.VISIBLE);
                 RequestOptions requestOptions = new RequestOptions();

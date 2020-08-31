@@ -8,6 +8,7 @@ import android.view.ViewGroup;
 import android.widget.Button;
 import android.widget.ImageView;
 import android.widget.TextView;
+import android.widget.Toast;
 
 import androidx.annotation.NonNull;
 import androidx.recyclerview.widget.RecyclerView;
@@ -81,6 +82,7 @@ public class RequestsRecyclerAdapter extends RecyclerView.Adapter<RequestsRecycl
                                 intent.putExtra(FrontActivity.STATE,FrontActivity.REQUEST_ID);
                                 mContext.startActivity(intent);
                             }else{
+                                Toast.makeText(mContext,"user deleted himself",Toast.LENGTH_SHORT).show();
                                 deleteRequest(user_id);
                             }
                         }
