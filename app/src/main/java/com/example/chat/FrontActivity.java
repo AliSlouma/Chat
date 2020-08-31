@@ -585,8 +585,6 @@ public class FrontActivity extends AppCompatActivity
             showChats();
         }else if(id == R.id.nav_friends){
             showFriends();
-        }else if(id == R.id.nav_search_profiles){
-            showProfiles();
         }else if(id == R.id.nav_requests){
             showRequests();
         }else if(id == R.id.nav_search_profiles){

@@ -28,6 +28,7 @@ import com.android.volley.Response;
 import com.android.volley.VolleyError;
 import com.android.volley.toolbox.JsonObjectRequest;
 import com.bumptech.glide.Glide;
+import com.bumptech.glide.request.RequestOptions;
 import com.example.chat.FrontActivity;
 import com.example.chat.R;
 import com.example.chat.chats.ChatActivity;
@@ -248,7 +249,12 @@ public class UserProfileActivity extends AppCompatActivity {
                 mUri = (String) dataSnapshot.child(IMAGE_URI).getValue();
                 mNameEditText.setText(mName);
                 mStatusEditText.setText(mStatus);
-                Glide.with(getBaseContext()).load(mUri).into(mUserPhoto);
+                //Glide.with(getBaseContext()).load(mUri).into(mUserPhoto);
+                if(mUri.equals("")){
+                    mUserPhoto.setImageDrawable(getBaseContext().getResources().getDrawable(R.drawable.profilepic));
+                }else {
+                    Glide.with(getBaseContext()).load(mUri).into(mUserPhoto);
+                }
             }
 
             @Override
@@ -628,7 +634,6 @@ public class UserProfileActivity extends AppCompatActivity {
                         intent.putExtra(FrontActivity.STATE,FrontActivity.FRIENDS_ID);
                         intent.putExtra(FrontActivity.USER_ID,mUserID);
                         startActivity(intent);
-                        Toast.makeText(getApplicationContext(), "user accepted request" , Toast.LENGTH_SHORT).show();
                     }else {
                         mCancelCnt++;
                     }

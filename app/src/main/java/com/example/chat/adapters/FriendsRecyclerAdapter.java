@@ -14,6 +14,7 @@ import androidx.annotation.NonNull;
 import androidx.recyclerview.widget.RecyclerView;
 
 import com.bumptech.glide.Glide;
+import com.bumptech.glide.request.RequestOptions;
 import com.example.chat.FrontActivity;
 import com.example.chat.R;
 import com.example.chat.user.UserInstance;
@@ -45,7 +46,12 @@ public class FriendsRecyclerAdapter extends RecyclerView.Adapter<FriendsRecycler
         UserInstance userInstance = mFriends.get(position);
         holder.name.setText(userInstance.getName());
         holder.status.setText(userInstance.getStatus());
-        Glide.with(mContext).load(userInstance.getImageUri()).into(holder.image);
+       // Glide.with(mContext).load(userInstance.getImageUri()).into(holder.image);
+        if(userInstance.getImageUri().equals("")){
+            holder.image.setImageDrawable(mContext.getResources().getDrawable(R.drawable.profilepic));
+        }else {
+            Glide.with(mContext).load(userInstance.getImageUri()).into(holder.image);
+        }
         holder.user_id = userInstance.getUId();
     }
 
