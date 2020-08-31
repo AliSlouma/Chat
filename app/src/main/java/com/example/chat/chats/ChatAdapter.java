@@ -91,6 +91,7 @@ public class ChatAdapter extends RecyclerView.Adapter<ChatAdapter.ChatViewHolder
             holder.lastMessage.setTextSize(20);
             holder.lastMessage.setTextColor(Color.BLACK);
 
+
         }else{
             holder.lastMessage.setTypeface(Typeface.DEFAULT);
             holder.lastMessage.setTextSize(20);
@@ -98,6 +99,7 @@ public class ChatAdapter extends RecyclerView.Adapter<ChatAdapter.ChatViewHolder
         }
 
         holder.name.setText(chatInstance.getReceiver());
+
 
 
         holder.lastMessage.setText(chatInstance.getLastMessage());

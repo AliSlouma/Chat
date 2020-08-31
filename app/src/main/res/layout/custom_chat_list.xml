@@ -17,6 +17,9 @@
         android:textColor="#000000"
         android:textSize="20sp"
         android:textStyle="bold"
+        android:maxLength="12"
+        android:ellipsize="end"
+        android:maxLines="1"
         app:layout_constraintStart_toEndOf="@+id/friend_chat_list_photo"
         app:layout_constraintTop_toBottomOf="@+id/chat_name" />
 

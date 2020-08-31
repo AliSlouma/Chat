@@ -74,8 +74,8 @@ public class ChatActivity extends AppCompatActivity {
             messageRef.setValue(messageInstance);
             sendMessageEditText.setText("");
 
-            initializedChatInstanceSender(getMessage);
-            initializedChatInstanceReceiver(getMessage);
+            initializedChatInstanceSender(messageInstance.getSender()+": "+getMessage);
+            initializedChatInstanceReceiver(messageInstance.getSender()+": " + getMessage);
 
 
 
