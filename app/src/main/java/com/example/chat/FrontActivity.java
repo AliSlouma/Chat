@@ -623,6 +623,7 @@ public class FrontActivity extends AppCompatActivity
             finish();
             Intent intent = new Intent(getBaseContext(),LoginActivity.class);
             Toast.makeText(getBaseContext(),"Signed out!",Toast.LENGTH_SHORT).show();
+            startActivity(intent);
         }
         DrawerLayout drawer = (DrawerLayout) findViewById(R.id.drawer_layout);
         drawer.closeDrawer(GravityCompat.START);
