@@ -310,7 +310,7 @@ public class FrontActivity extends AppCompatActivity
 
             String currentTime = timeFormat.format(calendar.getTime());
 
-            userState.child("userState").setValue(currentTime);
+            userState.child("userState").setValue("Last Seen: "+currentTime);
 
         }
     }
@@ -326,7 +326,7 @@ public class FrontActivity extends AppCompatActivity
 
             String currentTime = timeFormat.format(calendar.getTime());
 
-            userState.child("userState").setValue(currentTime);
+            userState.child("userState").setValue("Last Seen: "+currentTime);
 
         }
     }
@@ -686,7 +686,7 @@ public class FrontActivity extends AppCompatActivity
             @Override
             public void onChildAdded(@NonNull DataSnapshot dataSnapshot, @Nullable String s) {
                 mProgressBar.setVisibility(View.VISIBLE);
-                chatInstanceList.add(dataSnapshot.getValue(ChatInstance.class));
+                chatInstanceList.add(0,dataSnapshot.getValue(ChatInstance.class));
                 chatAdapter.notifyDataSetChanged();
 
             }
