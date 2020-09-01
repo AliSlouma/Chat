@@ -544,11 +544,13 @@ public class FrontActivity extends AppCompatActivity
                 if(dataSnapshot.exists()) {
                     mProgressBar.setVisibility(View.VISIBLE);
                     UserInstance userInstance = dataSnapshot.getValue(UserInstance.class);
-                    if(userInstance.getNumber() != null && mContacts.contains(userInstance.getNumber()))
-                        mProfiles.add(0,userInstance);
-                    else
-                        mProfiles.add(userInstance);
-                    mProfilesAdapter.notifyDataSetChanged();
+                    if(!userInstance.getUId().equals(mFirebaseAuth.getUid())) {
+                        if (userInstance.getNumber() != null && mContacts.contains(userInstance.getNumber()))
+                            mProfiles.add(0, userInstance);
+                        else
+                            mProfiles.add(userInstance);
+                        mProfilesAdapter.notifyDataSetChanged();
+                    }
                 }
             }
 
