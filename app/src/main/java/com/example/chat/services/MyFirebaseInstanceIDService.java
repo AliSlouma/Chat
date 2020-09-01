@@ -21,7 +21,8 @@ public class MyFirebaseInstanceIDService extends FirebaseInstanceIdService {
         String token = FirebaseInstanceId.getInstance().getToken();
 
         // Once the token is generated, subscribe to topic with the userId
-        FirebaseMessaging.getInstance().subscribeToTopic(FirebaseUtil.sFirebaseAuth.getUid());
+        if(FirebaseUtil.sFirebaseAuth.getCurrentUser()!=null)
+          FirebaseMessaging.getInstance().subscribeToTopic(FirebaseUtil.sFirebaseAuth.getUid());
         Log.i(TAG, "onTokenRefresh completed with token: " + token);
     }
 

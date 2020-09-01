@@ -3,6 +3,7 @@ package com.example.chat.login;
 import androidx.annotation.NonNull;
 import androidx.appcompat.app.AppCompatActivity;
 
+import android.app.ProgressDialog;
 import android.content.Intent;
 import android.os.Bundle;
 import android.text.TextUtils;
@@ -30,7 +31,7 @@ public class LoginActivity extends AppCompatActivity {
     EditText password;
     private FirebaseAuth firebaseAuth;
     private DatabaseReference root;
-
+    private ProgressDialog progressDialog;
     public void register(View view){
         startActivity(new Intent(getApplicationContext(), RegisterActivity.class));
     }
@@ -47,6 +48,7 @@ public class LoginActivity extends AppCompatActivity {
             Toast.makeText(LoginActivity.this, "Enter Your password", Toast.LENGTH_SHORT).show();
 
         else {
+            progressDialog.show();
             firebaseAuth.signInWithEmailAndPassword(userEmail, userPassword)
                     .addOnCompleteListener(this, new OnCompleteListener<AuthResult>() {
                         @Override
@@ -70,24 +72,28 @@ public class LoginActivity extends AppCompatActivity {
         root = FirebaseDatabase.getInstance().getReference();
         email = findViewById(R.id.nametext);
         password =findViewById(R.id.editTextTextPassword);
+        progressDialog = new ProgressDialog(this);
+        progressDialog.setMessage("Please Wait !! Signing in");
 
     }
     private void sendToProfileOrMain(){
         String ID = firebaseAuth.getCurrentUser().getUid();
         Log.i("Info" , ID);
 
-        root.child("Users").child(ID).addValueEventListener(new ValueEventListener() {
+        root.child("Users").child(ID).addListenerForSingleValueEvent(new ValueEventListener() {
             @Override
             public void onDataChange(@NonNull DataSnapshot dataSnapshot){
-                if (dataSnapshot.child("name").exists()) {
+                if(dataSnapshot.child("name").exists()) {
                     Toast.makeText(getApplicationContext(),"Welcome back ", Toast.LENGTH_SHORT).show();
-                    startActivity(new Intent(getApplicationContext(), FrontActivity.class));
-                    finish();
+                    progressDialog.dismiss();
+                    Intent intent = new Intent(LoginActivity.this , FrontActivity.class);
+                    intent.setFlags(intent.FLAG_ACTIVITY_NEW_TASK | intent.FLAG_ACTIVITY_CLEAR_TASK);
+                    startActivity(intent);
                 }
                 else {
                     startActivity(new Intent(getApplicationContext(), ProfileActivity.class));
-                    finish();
                 }
+                finish();
             }
             @Override
             public void onCancelled(@NonNull DatabaseError databaseError) {

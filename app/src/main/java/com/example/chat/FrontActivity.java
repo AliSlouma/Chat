@@ -824,7 +824,7 @@ public class FrontActivity extends AppCompatActivity
             while (mCursor.moveToNext()) {
                 String id = mCursor.getString(mCursor.getColumnIndex(ContactsContract.Contacts._ID));
                 String name = mCursor.getString(mCursor.getColumnIndex(ContactsContract.Contacts.DISPLAY_NAME));
-                Log.i("Names", name);
+                //Log.i("Names", name);
                 if (Integer.parseInt(mCursor.getString(mCursor.getColumnIndex(ContactsContract.Contacts.HAS_PHONE_NUMBER))) > 0)
                 {
                     // Query phone here. Covered next
