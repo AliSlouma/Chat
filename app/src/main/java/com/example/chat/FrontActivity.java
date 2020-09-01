@@ -151,6 +151,8 @@ public class FrontActivity extends AppCompatActivity
     private DatabaseReference userState;
     public static boolean onpause = false;
     private LinearLayoutManager profilesManager;
+    private Toolbar mToolbar;
+    private TextView mRequestHeader;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -163,13 +165,13 @@ public class FrontActivity extends AppCompatActivity
         mContacts = new HashSet<>();
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_front);
-        Toolbar toolbar = findViewById(R.id.toolbar);
-        setSupportActionBar(toolbar);
+        mToolbar = findViewById(R.id.toolbar);
+        setSupportActionBar(mToolbar);
         DrawerLayout drawer = findViewById(R.id.drawer_layout);
         NavigationView navigationView = findViewById(R.id.nav_view);
 
         ActionBarDrawerToggle toggle = new ActionBarDrawerToggle(
-                this, drawer, toolbar, R.string.navigation_drawer_open, R.string.navigation_drawer_close);
+                this, drawer, mToolbar, R.string.navigation_drawer_open, R.string.navigation_drawer_close);
         drawer.setDrawerListener(toggle);
         toggle.syncState();
         navigationView.setNavigationItemSelectedListener(this);
@@ -272,11 +274,18 @@ public class FrontActivity extends AppCompatActivity
         });
 
 
-        showChats();
+
+        navigationView.getMenu().findItem(R.id.nav_chats).setChecked(true);
         String token = FirebaseInstanceId.getInstance().getToken();
         FirebaseMessaging.getInstance().subscribeToTopic(mFirebaseAuth.getUid());
         showContacts();
+        mRequestHeader = findViewById(R.id.requests_header);
+        showChats();
     }
+    private void disableHeader(){
+        mRequestHeader.setVisibility(View.INVISIBLE);
+    }
+
     protected void onStart() {
         super.onStart();
         onpause = false;
@@ -639,6 +648,8 @@ public class FrontActivity extends AppCompatActivity
         mSearchEditText.setVisibility(View.VISIBLE);
         mFront_list.setLayoutManager(mFriendsLayoutManager);
         mFront_list.setAdapter(mFriendsRecyclerAdapter);
+        mToolbar.setTitle("Friends");
+        disableHeader();
     }
 
     private void showChats() {
@@ -649,6 +660,8 @@ public class FrontActivity extends AppCompatActivity
         mSearchEditText.setVisibility(View.VISIBLE);
         mFront_list.setAdapter(chatAdapter);
         mFront_list.setLayoutManager(linearLayoutManager);
+        mToolbar.setTitle("Chat");
+        disableHeader();
     }
 
     private void initializeChatAdapter() {
@@ -728,6 +741,8 @@ public class FrontActivity extends AppCompatActivity
         }
         mFront_list.setLayoutManager(mRequestsManager);
         mFront_list.setAdapter(mRequestsRecyclerAdapter);
+        mToolbar.setTitle("Requests");
+        mRequestHeader.setVisibility(View.VISIBLE);
 
     }
     private void showProfiles(){
@@ -740,7 +755,8 @@ public class FrontActivity extends AppCompatActivity
         }
         mFront_list.setLayoutManager(profilesManager);
         mFront_list.setAdapter(mProfilesAdapter);
-
+        mToolbar.setTitle("Profiles");
+        disableHeader();
     }
 
 

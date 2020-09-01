@@ -14,7 +14,7 @@
     <string name="title_dashboard">Dashboard</string>
     <string name="title_notifications">Notifications</string>
     <string name="userStatus">user status</string>
-    <string name="title_activity_front">FrontActivity</string>
+    <string name="title_activity_front">Chat</string>
     <string name="navigation_drawer_open">Open navigation drawer</string>
     <string name="navigation_drawer_close">Close navigation drawer</string>
     <string name="nav_header_title">Android Studio</string>

@@ -6,4 +6,5 @@
     <color name="name_background">#DBDBD7</color>
     <color name="green">#41E049</color>
     <color name="red">#F44336</color>
+    <color name="dark_gray">#BBB4B4</color>
 </resources>

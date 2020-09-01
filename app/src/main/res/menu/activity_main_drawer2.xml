@@ -4,16 +4,19 @@
     <group android:checkableBehavior="single">
         <item
             android:id="@+id/nav_search_profiles"
+            android:icon="@drawable/ic_baseline_search_24"
             android:title="Find friends" />
         <item
             android:id="@+id/nav_chats"
+            android:icon="@drawable/ic_baseline_message_24"
             android:title="Chats" />
         <item
             android:id="@+id/nav_friends"
-            android:icon="@drawable/ic_menu_slideshow"
+            android:icon="@drawable/ic_baseline_person_24"
             android:title="My friends" />
         <item
             android:id="@+id/nav_requests"
+            android:icon="@drawable/ic_baseline_timer_24"
             android:title="Requests" />
     </group>
 
