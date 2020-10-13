@@ -7,6 +7,7 @@ Used Firebase to handle messaging and friends requests.
 <img src="https://github.com/AliSlouma/Chat/blob/master/ss1.jpg" width="300" height="600">
 <img src="https://github.com/AliSlouma/Chat/blob/master/ss3.png" width="300" height="600">
 <img src="https://github.com/AliSlouma/Chat/blob/master/ss2.jpg" width="300" height="600">
+
 # Attatched with the project
 A report showing data structure and project structure and screen shots of the project.\
 A demo video showing the project running.\
