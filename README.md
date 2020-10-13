@@ -4,6 +4,7 @@ messages, sending photos, notifications, deleting account, simple profile for th
 and out, searching users by name and sync to contacts to find people whom you know.\
 Used Firebase to handle messaging and friends requests.
 # Screen shots from the app 
+<img src="https://github.com/AliSlouma/Chat/blob/master/ss1.jpg" width="300" height="600">
 A report showing data structure and project structure and screen shots of the project.\
 A demo video showing the project running.\
 A release-apk of the project.
